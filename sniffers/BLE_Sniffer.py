@@ -155,3 +155,6 @@ class BLESniffer(Sniffer.Sniffer, threading.Thread):
 
                     except Exception as e:
                         logging.exception("packet processing error %s" % str(e))
+
+    def get_devices(self):
+        return self.devices

@@ -1,4 +1,5 @@
-import threading 
+import threading
+
 class Sniffer(threading.Thread):
     id_counter = -1
 

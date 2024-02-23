@@ -90,7 +90,7 @@ class WiFiSniffer(Sniffer.Sniffer, threading.Thread):
                 if(network.timestamp != new_network.timestamp):
                     network.timestamp = new_network.timestamp
                     self.update_wifi_network_row(key, "timestamp", timestamp)
-        
+
             # Add new network
             else:
                 self.networks[key] = new_network
@@ -102,6 +102,7 @@ class WiFiSniffer(Sniffer.Sniffer, threading.Thread):
     def parse_device_data(self, l):
         try: 
             [_,channel, RSSI, source_address, frame_type] = l
+
         except Exception as e:
             self.logger.error(f'Error parsing WiFi device data: {e}')
 
@@ -119,11 +120,11 @@ class WiFiSniffer(Sniffer.Sniffer, threading.Thread):
                 self.update_wifi_device_row(key, "RSSI", int(RSSI))
             if(device.channel != new_device.channel):
                 device.channel = new_device.channel
-                self.update_wifi_device_row(key, "channel", int(channel))  
+                self.update_wifi_device_row(key, "channel", int(channel))
             if(device.timestamp != new_device.timestamp):
                 device.timestamp = new_device.timestamp
-                self.update_wifi_device_row(key, "timestamp", timestamp)      
-                    
+                self.update_wifi_device_row(key, "timestamp", timestamp)
+
         # Add new device
         else:
             self.devices[key] = new_device

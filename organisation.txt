@@ -1,40 +1,156 @@
-IoT Hound
+#code organisation
+
+Details :
+
+scrollable_frame.ScrollableFrame() => rend la frame Tk spécifiée scrollable
+
+
+gui.GUI
+		|
+		|----__init__()
+		|       |
+		|       |----logs.logger.logger
+		|       |----master
+		|       |----BLE_sniffer
+		|       |----WiFi_sniffer
+		|       |----ZigBee_sniffer
+		|       |----set(seized_devices) => La fonction set permet qu'il n'y ai aucun élément dupliqué dans la liste "seized_devices"
+		|       |----create_widgets()
+		|
+		|----create_widgets()
+		|       |
+		|       |----create_control_frame()
+		|       |----create_wifi_sniffer_frame()
+		|       |----create_ble_sniffer_frame()
+		|       |----create_zigbee_sniffer_frame()
+		|
+		|----create_control_frame()
+		|            |
+		|            |----create_commands_frame()
+        |            |----create_seized_device_frame()
+		|                        |----scrollable_frame.ScrollableFrame() => rend la frame Tk spécifiée scrollable
+		|                        |----device_gui.DeviceTable(self_frame, add_seized_device_row())
+		| 
+		|----create_wifi_sniffer_frame()
+		|            |
+		|            |----create_wifi_devices_frame()
+		|            |            |
+		|            |            |----scrollable_frame.ScrollableFrame() => rend la frame Tk spécifiée scrollable
+		|            |            |----device_gui.DeviceTable(self_frame, add_seized_device_row())
+		|            |
+        |            |----create_wifi_networks_frame()
+		|                         |
+		|                         |----scrollable_frame.ScrollableFrame()                                                        => rend la frame Tk spécifiée scrollable
+		|                         |----network_gui.NetworkTable(wifi_network_scrollable_frame, WiFi_sniffer, wifi_device_table)  => permet d'ajouter/modifier/supprimer des éléments afichés dans la liste
+		|
+		|----create_ble_sniffer_frame()
+		|            |
+		|            |----create_ble_devices_frame()
+		|          	              |
+		|                         |----scrollable_frame.ScrollableFrame() => rend la frame Tk spécifiée scrollable
+		|                         |----device_gui.DeviceTable(self_frame, add_seized_device_row())
+		|
+		|----create_zigbee_sniffer_frame()
+		|            |
+		|            |----create_zigbee_devices_frame()
+		| 				    	 |            |
+		|						 |            |----scrollable_frame.ScrollableFrame() => rend la frame Tk spécifiée scrollable
+		|						 |            |----device_gui.DeviceTable(self_frame, add_seized_device_row())
+		|						 |
+		|         			     |----create_zigbee_networks_frame()
+		|						 |            |
+		|						 |            |----scrollable_frame.ScrollableFrame()                                                        => rend la frame Tk spécifiée scrollable
+		|						 |            |----network_gui.NetworkTable(wifi_network_scrollable_frame, WiFi_sniffer, wifi_device_table)  => permet d'ajouter/modifier/supprimer des éléments afichés dans la liste
+		|						 |
+	    |                        |----create_sixlowpan_devices_frame()
+		|
+		|----create_sixlowpan_sniffer_frame()
+		|						 |
+		|						 |----create_sixlowpan_devices_frame()
+		|												 |
+		|												 |----scrollable_frame.ScrollableFrame() => rend la frame Tk spécifiée scrollable
+		|												 |----device_gui.DeviceTable(self_frame, add_seized_device_row())
+		|
+		|----on_start_click() => Une série d'informations seront loggées via logger.logger
+		|						|
+		|						|----BLE_Sniffer.BLESniffer
+		|						|						|
+		|						|						|----start(add_ble_device_row(), update_ble_device_row(), remove_ble_device_row()) => Les fonctions renvoyées à start se trouvent en bas de gui.GUI
+		|						|
+		|						|----WiFi_Sniffer.WiFiSniffer
+		|						|						|                                   #Les fonctions renvoyées à start se trouvent en bas de gui.GUI
+		|						|						|----start(add_wifi_device_row(), update_wifi_device_row(), remove_wifi_device_row(), add_wifi_network_row(), update_wifi_network_row(), remove_wifi_network_row())
+		|						|
+		|						|----ZigBee_Sniffer.ZigBeeSniffer
+		|												|                                   #Les fonctions renvoyées à start se trouvent en bas de gui.GUI
+		|												|----start(add_zigbee_device_row(), update_zigbee_device_row(), remove_zigbee_device_row(), add_zigbee_network_row(), update_zigbee_network_row(), remove_zigbee_network_row(), add_sixlowpan_device_row(), update_sixlowpan_device_row(), remove_sixlowpan_device_row())
+		|
+		|----on_stop_click() => Une série d'informations seront loggées via logger.logger
+		|                       |
+		|						|----BLE_Sniffer.BLESniffer
+		|						|						|
+		|						|						|----stop()
+		|						|
+		|						|----WiFi_Sniffer.WiFiSniffer
+		|						|						|
+		|						|						|----stop()
+		|						|
+		|						|----ZigBee_Sniffer.ZigBeeSniffer
+		|												|
+		|												|----stop() 
+		|
+		|----add_seized_device_row() => supprime la ligne spécifiée (le terme devrait peut-être être del et pas seize)
 
 
 
-# Code Organization
-``` text
-IoT Hound
-├── devices/                    
-│   ├── device.py               << class representation of a device
-│   └── network.py              << class representation of a network
-├── firmwares/   
-│   ├── LICENCE.txt                     
-│   ├── sniffer_heltec_wifi_lora_v2.ino              << firmware for sniffing WiFi frames  
-│   ├── sniffer_nrf52840dongle_802154.hex            << firmware for sniffing IEEE 802.15.4 frames 
-│   └── sniffer_nrf52840dongle_ble.hex               << firmware for sniffing BLE frames for Nordic Semiconductors device
-|   └── nrf_sniffer_for_bluetooth_le_v4.1.1.uf2      << firmware for sniffing BLE frames for Makerdiary device
-├── gui/                        
-│   ├── device_gui.py           << contain DeviceRow, DeviceTable, SeizedDeviceRow and SeizedDeviceTable classes  
-│   ├── gui.py                  << GUI elements
-│   ├── network_gui.py          << contain NetworkRow and NetworkTable classes
-│   └── scrollable_frame.py     << custom scrollable frame widget
-├── logs/    
-│   ├── logger.py               << logger implementation
-│   └── logs.log                << log file
-├── sniffers/                   
-│   ├── BLE_Sniffer.py          << class representation of a BLE Sniffer
-│   ├── Sniffer.py              << class representation of a Sniffer
-│   ├── WiFi_Sniffer.py         << class representation of a WiFi Sniffer
-│   └── ZigBee_Sniffer.py       << class representation of a ZigBee Sniffer
-├── utils/
-│   ├── Exceptions.py           << from Sniffer API 
-│   ├── Filelock.py             << from Sniffer API 
-│   ├── LICENCE.txt             << from Sniffer API
-│   ├── Notifications.py        << from Sniffer API 
-│   ├── Packet.py               << from Sniffer API 
-│   ├── Types.py                << from Sniffer API 
-│   └── UART.py                 << from Sniffer API 
-└── main.py                     << entry point
-```
+network_gui
+		|
+		|----NetworkRow
+		|       |
+		|       |----__init__()
+		|       |       |
+		|       |       |----network
+		|       |       |----row
+		|       |       |----network_table_frame
+		|       |       |----device_table
+		|       |       |----sniffer
+		|       |       |----get_network_rows
+		|       |       |----set_network_rows
+		|       |       |----create_widgets()                     => défini un type d'affihage en fonction du type de réseau (zigbee ou wifi)
+		|       |       |         |
+		|       |       |         |----on_checkbox_click()        => défini le style graphique (ligne rouge) lorse que la checkbox est sélectionnée
+		|       |       |                     |
+		|       |       |                     |----set_color()    => défini un typed'affihage en fonction du type de réseau (zigbee ou wifi)
+		|       |       |
+		|       |       |----set_grid()                           => défini un typed'affihage en fonction du type de réseau (zigbee ou wifi)
+		|       |
+		|       |----destroy()                                    => défini en fonction du type de réseau (zigbee ou wifi) la manière dont l'affichage est supprimé
+		|
+		|----NetworkTable
+		        |
+		        |----__init__()
+		        |       |
+		        |       |----network_table_frame
+		        |       |----sniffer
+		        |       |----device_table
+		        |       |----network_rows
+		        |       |----size
+		        |
+		        |----add_row(network)
+						|----remove_row(key)
+						|----update_row(key, field, value)remove_sixlowpan_device_row
 
+
+
+BLE_Sniffer => basée sur la classe Sniffer
+		|
+		|----__init__()
+		|        |
+		|        |----Packet.packetReader(serialport, baudrate) => Cette classe est fornie par le constructeur pour l'antenne nRF
+		|        |----devices
+		|        |----logs.logger.logger
+		|        |----setup_scan() => Initialise l'antenne via Packet.packetReader
+		|
+		|----start()
+
+To continue ...

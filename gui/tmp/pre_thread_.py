@@ -3,7 +3,7 @@ import os
 from time import sleep
 from devices.csv import CSV
 from devices.device import Device
-from devices.network import Network
+from threading import Thread
 from gui.scrollable_frame import ScrollableFrame
 from gui.network_gui import NetworkTable
 from gui.device_gui import DeviceTable, SeizedDeviceTable
@@ -23,9 +23,8 @@ class GUI:
         self.current_pannel = self.pannels[current_pannel]
         self.call_frequence_widget(self.current_pannel)
 
-        self.fields_ble = ["address", "RSSI", "type", "timestamp", "channel", "name", "extAddress"]
-        self.fields_wifi_networks = ["ID", "RSSI", "channel", "type", "timestamp", "BSSID"]
-        self.fields_wifi_devices = self.fields_ble
+        self.already_open_csv_ble = False
+        self.fields = ["address", "RSSI", "type", "timestamp", "channel", "name", "extAddress"]
 
     # ====================
     # Rebuild
@@ -339,9 +338,7 @@ class GUI:
         self.wifi_device_table = DeviceTable(
             self.wifi_device_scrollable_frame.item_frame, self.add_seized_device_row
         )
-        self.WiFi_sniffer.set_wifi_device_table(self.wifi_device_table)
-
-        self.display_wifi_device()
+        # self.WiFi_sniffer.set_wifi_device_table(self.wifi_device_table)
 
     def create_wifi_networks_frame(self):
         # create WiFi network table
@@ -391,44 +388,13 @@ class GUI:
             self.wifi_device_table,
         )
 
-        self.display_wifi_network()
-
-    def display_wifi_device(self):
-
-        file = open("save/log_wifi_devices.csv", "r")
-        for line in file:
-
-            device = Device(
-                address=line.split(";")[0],
-                RSSI=line.split(";")[1],
-                type=line.split(";")[2],
-                timestamp=line.split(";")[3],
-                channel=line.split(";")[4],
-                name=line.split(";")[5],
-                extAddress=line.split(";")[6]
-            )
-
-            self.wifi_device_table.add_row(device)
-
-    def display_wifi_network(self):
-
-        file = open("save/log_wifi_networks.csv", "r")
-        for line in file:
-
-            network = Network(
-                ID=line.split(";")[0],
-                RSSI=line.split(";")[1],
-                channel=line.split(";")[2],
-                type=line.split(";")[3],
-                timestamp=line.split(";")[4],
-                BSSID=line.split(";")[5],
-            )
-
-            self.wifi_network_table.add_row(network)
-
+    def display_wifi_devices(self):
+        pass
+    
     # ====================
     # BLE frames
     # ====================
+
     def create_ble_sniffer_frame(self):
         # create BLE device table
         self.ble_device_scrollable_frame = ScrollableFrame(self.widget_base_frame)
@@ -688,18 +654,6 @@ class GUI:
         except Exception as e:
             self.logger.error(f"Error while starting scan of BLESniffer: {e}")
 
-        try:
-            self.WiFi_sniffer.start(
-                self.add_wifi_device_row,
-                self.update_wifi_device_row,
-                self.remove_wifi_device_row,
-                self.add_wifi_network_row,
-                self.update_wifi_network_row,
-                self.remove_wifi_network_row,
-            )
-        except Exception as e:
-            self.logger.error(f"Error while starting scan of WiFiSniffer: {e}")
-
     def on_start_click(self):
         self.logger.debug("Start clicked")
         try:
@@ -784,7 +738,7 @@ class GUI:
     def add_seized_device_row(self, device):
         self.logger.debug(f"{device.__repr__()} seized")
         self.seized_devices.add(device.key)  # Add device to the set of seized devices
-        #self.seized_device_table.add_row(device)
+        self.seized_device_table.add_row(device)
         if device.type == "WiFi-2.4GHz":
             self.wifi_device_table.remove_row(device.key)
         elif device.type == "BLE":
@@ -798,53 +752,28 @@ class GUI:
     # WiFi call back functions
     # ====================
     def add_wifi_network_row(self, network):
-        if os.path.isfile("save/log_wifi_networks.csv") == False:
-            CSV.write_csv_header("save/log_wifi_networks.csv", self.fields_wifi_networks)
-            print("create file")
-
-        CSV.write_csv_line("save/log_wifi_networks.csv", self.fields_wifi_networks, network)
+        self.wifi_network_table.add_row(network)
 
     def update_wifi_network_row(self, key, field, value):
-        #Only display the update if the screen is displayed
-        #Must be updated to update the log file directly
-        try:
-            self.wifi_network_table.update_row(key, field, value)
-        except:
-            pass
+        self.wifi_network_table.update_row(key, field, value)
 
     def remove_wifi_network_row(self, key):
-        #self.wifi_network_table.remove_row(key)
-        print(key)
+        self.wifi_network_table.remove_row(key)
 
     def add_wifi_device_row(self, device):
-        #if device.key in self.seized_devices:
-        #    pass
-        #else:
-        #    self.wifi_device_table.add_row(device)
-
         if device.key in self.seized_devices:
             pass
         else:
-            if os.path.isfile("save/log_wifi_devices.csv") == False:
-                CSV.write_csv_header("save/log_wifi_devices.csv", self.fields_wifi_devices)
-                print("create file")
-
-            CSV.write_csv_line("save/log_wifi_devices.csv", self.fields_wifi_devices, device)
+            self.wifi_device_table.add_row(device)
 
     def update_wifi_device_row(self, key, field, value):
-        #Only display the update if the screen is displayed
-        #Must be updated to update the log file directly
-        try:
-            if key in self.seized_devices:
-                pass
-            else:
-                self.wifi_device_table.update_row(key, field, value)
-        except:
+        if key in self.seized_devices:
             pass
+        else:
+            self.wifi_device_table.update_row(key, field, value)
 
     def remove_wifi_device_row(self, key):
-        #self.wifi_device_table.remove_row(key)
-        print(key)
+        self.wifi_device_table.remove_row(key)
 
     # ====================
     # BLE call back functions
@@ -853,11 +782,14 @@ class GUI:
         if device.key in self.seized_devices:
             pass
         else:
+
+            print(device)
+            
             if os.path.isfile("save/log_ble.csv") == False:
-                CSV.write_csv_header("save/log_ble.csv", self.fields_ble)
+                CSV.write_csv_header(self, "save/log_ble.csv", self.fields)
                 print("create file")
 
-            CSV.write_csv_line("save/log_ble.csv", self.fields_ble, device)
+            CSV.write_csv_line("save/log_ble.csv", self.fields, device)          
 
     def update_ble_device_row(self, key, field, value):
         #Only display the update if the screen is displayed
@@ -871,22 +803,16 @@ class GUI:
             pass
 
     def remove_ble_device_row(self, key):
-        print(key)
-        #CSV.write_csv_line("save/log_ble.csv", self.fields, device)
+        #self.ble_device_table.remove_row(key)
+        log = open("save/log.txt", "a")
+        log.write(key)
+        log.close()
 
     # ====================
     # ZigBee Call back functions
     # ====================
     def add_zigbee_network_row(self, network):
-        #self.zigbee_network_table.add_row(network)
-
-        print(network)
-
-        if os.path.isfile("save/log_zigbee_networks.csv") == False:
-            CSV.write_csv_header("save/log_zigbee_networks.csv", self.fields_wifi_networks)
-            print("create file")
-
-        CSV.write_csv_line("save/log_zigbee_networks.csv", self.fields_wifi_networks, network)
+        self.zigbee_network_table.add_row(network)
 
     def update_zigbee_network_row(self, key, field, value):
         self.zigbee_network_table.update_row(key, field, value)
@@ -895,18 +821,10 @@ class GUI:
         self.zigbee_network_table.remove_row(key)
 
     def add_zigbee_device_row(self, device):
-        #if device.key in self.seized_devices:
-        #    pass
-        #else:
-        #    self.zigbee_device_table.add_row(device)
-
-        print(device)
-
-        if os.path.isfile("save/log_zigbee_device.csv") == False:
-            CSV.write_csv_header("save/log_zigbee_device.csv", self.fields_wifi_networks)
-            print("create file")
-
-        CSV.write_csv_line("save/log_zigbee_device.csv", self.fields_wifi_networks, device)
+        if device.key in self.seized_devices:
+            pass
+        else:
+            self.zigbee_device_table.add_row(device)
 
     def update_zigbee_device_row(self, key, field, value):
         if key in self.seized_devices:

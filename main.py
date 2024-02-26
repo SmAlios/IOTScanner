@@ -1,6 +1,7 @@
 #!/bin/python3
 import tkinter as tk
 import signal, os
+import platform
 from gui.gui import GUI
 from sniffers.BLE_Sniffer import BLESniffer
 from sniffers.WiFi_Sniffer import WiFiSniffer
@@ -10,21 +11,9 @@ MyBLESniffer = None
 MyWiFiSniffer = None
 MyZigBeeSniffer = None
 
-#please choose your OS
-#choose 0 for Windows                       =>      in dev case
-#choose 1 for Raspberry with Touch Pad      =>      use case
-supported_os_list = ["win","raspScreen"]
-os_used = supported_os_list[0]
-
-#to find the correct tty*, use "ls /dev/tty*" and try to
-#deconnect and reconnect the differents antennas
-#COM_BLESniffer = "/dev/ttyACM0"
-#COM_ZigBeeSniffer = "/dev/ttyACM1"
-#COM_WiFiSniffer = "/dev/ttyUSB0"
-
-COM_BLESniffer = "COM6"
-COM_ZigBeeSniffer = "COM5"
-COM_WiFiSniffer = "COM8"
+COM_BLESniffer = ""
+COM_ZigBeeSniffer = ""
+COM_WiFiSniffer = ""
 
 def signal_handler(sig, frame):
     on_closing()
@@ -49,6 +38,19 @@ def on_closing():
 def main():
     # Create Sniffers
     global MyBLESniffer, MyWiFiSniffer, MyZigBeeSniffer
+    os_used = platform.system()
+
+    #configured my personal env during dev
+    if os_used == "Linux":
+        COM_BLESniffer = "/dev/ttyACM1" #acm1
+        COM_ZigBeeSniffer = "/dev/ttyACM0" #usb0
+        COM_WiFiSniffer = "/dev/ttyUSB0" #acm0
+    elif os_used == "Windows":
+        COM_BLESniffer = "COM6"
+        COM_ZigBeeSniffer = "COM5"
+        COM_WiFiSniffer = "COM8"
+    else:
+        print("Error occure, os unrecognized")
 
     MyBLESniffer = BLESniffer(serialport=COM_BLESniffer, baudrate=1000000)
     MyWiFiSniffer = WiFiSniffer(serialport=COM_WiFiSniffer, baudrate=115200)
@@ -60,12 +62,13 @@ def main():
     root = tk.Tk()
     root.title("IOTScanner")
 
-    if os_used == 1:
+    #configured for a respberry with a Touch Pad
+    if os_used == "Linux":
         root.attributes("-fullscreen", True)
-    elif os_used == 0:
+    elif os_used == "Windows":
         root.geometry("800x480")
     else:
-        print("ERROR => choosed OS don't exist")
+        print("Error occure, os unrecognized")
     
     root.protocol("WM_DELETE_WINDOW", on_closing)
 

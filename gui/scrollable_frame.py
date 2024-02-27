@@ -1,7 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 import functools
+from platform import system
+
 fp = functools.partial
+os = system()
 
 class ScrollableFrame(tk.Frame):
     def __init__(self, master, *args, **kwargs):
@@ -75,12 +78,22 @@ class ScrollFrame(ttk.Frame):
             self.canvas.itemconfigure(self.item_frame_id, width=self.canvas.winfo_width())
 
     def _on_mousewheel(self, event, scroll):
-        self.canvas.yview_scroll(int(scroll), "units")
+        if os == "Linux" or os == "Linux2":
+            self.canvas.yview_scroll(int(scroll), "units")
+        else:
+            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
 
     def _bind_to_mousewheel(self, event):
-        self.canvas.bind_all("<Button-4>", fp(self._on_mousewheel, scroll=-1))
-        self.canvas.bind_all("<Button-5>", fp(self._on_mousewheel, scroll=1))
+        if os == "Linux" or os == "Linux2":
+            self.canvas.bind_all("<Button-4>", fp(self._on_mousewheel, scroll=-1))
+            self.canvas.bind_all("<Button-5>", fp(self._on_mousewheel, scroll=1))
+        else:
+            self.bind_all("<MouseWheel>", self._on_mousewheel)
 
     def _unbind_from_mousewheel(self, event):
-        self.canvas.unbind_all("<Button-4>")
-        self.canvas.unbind_all("<Button-5>")
+        if os == "Linux" or os == "Linux2":
+            self.canvas.unbind_all("<Button-4>")
+            self.canvas.unbind_all("<Button-5>")
+        else:
+            self.unbind_all("<MouseWheel>")

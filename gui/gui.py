@@ -4,7 +4,7 @@ from time import sleep
 from devices.csv import CSV
 from devices.device import Device
 from devices.network import Network
-from gui.scrollable_frame import ScrollableFrame
+from gui.scrollable_frame import ScrollFrame
 from gui.network_gui import NetworkTable
 from gui.device_gui import DeviceTable, SeizedDeviceTable
 from logs.logger import logger
@@ -296,7 +296,7 @@ class GUI:
 
     def create_wifi_devices_frame(self):
         # create WiFi device table
-        self.wifi_device_scrollable_frame = ScrollableFrame(self.wifi_devices_frame)
+        self.wifi_device_scrollable_frame = ScrollFrame(self.wifi_devices_frame)
         self.wifi_device_scrollable_frame.pack(side="top", fill="both", expand=True)
 
         # create device table heading
@@ -345,7 +345,7 @@ class GUI:
 
     def create_wifi_networks_frame(self):
         # create WiFi network table
-        self.wifi_network_scrollable_frame = ScrollableFrame(self.wifi_networks_frame)
+        self.wifi_network_scrollable_frame = ScrollFrame(self.wifi_networks_frame)
         self.wifi_network_scrollable_frame.pack(side="top", fill="both", expand=True)
 
         # create network table heading
@@ -431,7 +431,7 @@ class GUI:
     # ====================
     def create_ble_sniffer_frame(self):
         # create BLE device table
-        self.ble_device_scrollable_frame = ScrollableFrame(self.widget_base_frame)
+        self.ble_device_scrollable_frame = ScrollFrame(self.widget_base_frame)
         self.ble_device_scrollable_frame.pack(side="top", fill="both", expand=True)
 
         # create device table heading
@@ -526,7 +526,7 @@ class GUI:
 
     def create_zigbee_devices_frame(self):
         # create ZigBee device table
-        self.zigbee_device_scrollable_frame = ScrollableFrame(self.zigbee_devices_frame)
+        self.zigbee_device_scrollable_frame = ScrollFrame(self.zigbee_devices_frame)
         self.zigbee_device_scrollable_frame.pack(side="top", fill="both", expand=True)
 
         # create device table heading
@@ -578,7 +578,7 @@ class GUI:
 
     def create_zigbee_networks_frame(self):
         # create ZigBee network table
-        self.zigbee_network_scrollable_frame = ScrollableFrame(
+        self.zigbee_network_scrollable_frame = ScrollFrame(
             self.zigbee_networks_frame
         )
         self.zigbee_network_scrollable_frame.pack(side="top", fill="both", expand=True)
@@ -625,7 +625,7 @@ class GUI:
     # ====================
     def create_sixlowpan_sniffer_frame(self):
         # create BLE device table
-        self.sixlowpan_device_scrollable_frame = ScrollableFrame(
+        self.sixlowpan_device_scrollable_frame = ScrollFrame(
             self.widget_base_frame
         )
         self.sixlowpan_device_scrollable_frame.pack(
@@ -697,6 +697,7 @@ class GUI:
                 self.update_wifi_network_row,
                 self.remove_wifi_network_row,
             )
+
         except Exception as e:
             self.logger.error(f"Error while starting scan of WiFiSniffer: {e}")
 

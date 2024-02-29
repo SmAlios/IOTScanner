@@ -6,6 +6,7 @@ from gui.gui import GUI
 from sniffers.BLE_Sniffer import BLESniffer
 from sniffers.WiFi_Sniffer import WiFiSniffer
 from sniffers.ZigBee_Sniffer import ZigBeeSniffer
+from time import sleep
 
 MyBLESniffer = None
 MyWiFiSniffer = None
@@ -34,6 +35,12 @@ def on_closing():
         pass
     os._exit(1)
 
+def delay_on_start():
+    if os.system("ps --no-headers -o comm 1") == "systemd":
+        pass
+    else:
+        sleep(8)
+
 
 def main():
     # Create Sniffers
@@ -58,13 +65,20 @@ def main():
 
     signal.signal(signal.SIGINT, signal_handler)
 
+    #Because of the screen not charging fast enought, with a classical service,
+    #the software obtain the error "_tkinter.TclError: couldn't connect to display ':0'"
+    #so a delay is the only solution to launch the softwre on start
+    delay_on_start()
+
     # Create the main window
     root = tk.Tk()
     root.title("IOTScanner")
 
     #configured for a respberry with a Touch Pad
     if os_used == "Linux":
-        root.attributes("-fullscreen", True)
+        #root.attributes("-fullscreen", True)
+        root.geometry("800x480+0+0")
+        root.overrideredirect(True)
     elif os_used == "Windows":
         root.geometry("800x480")
     else:

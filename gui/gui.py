@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter.ttk import Progressbar, Style
 import os
 from time import sleep
 from devices.csv import CSV
@@ -8,6 +9,9 @@ from gui.scrollable_frame import ScrollFrame
 from gui.network_gui import NetworkTable
 from gui.device_gui import DeviceTable, SeizedDeviceTable
 from logs.logger import logger
+
+from PIL import ImageTk, Image
+import os
 
 
 class GUI:
@@ -24,8 +28,14 @@ class GUI:
         self.call_frequence_widget(self.current_pannel)
 
         self.fields_ble = ["address", "RSSI", "type", "timestamp", "channel", "name", "extAddress"]
+
         self.fields_wifi_networks = ["ID", "RSSI", "channel", "type", "timestamp", "BSSID"]
         self.fields_wifi_devices = self.fields_ble
+
+        self.fields_zigbee_networks = ["ID", "RSSI", "channel", "type", "timestamp"]
+        self.fields_zigbee_devices = ["address", "name", "RSSI", "type", "channel", "extAddress", "timestamp"]
+
+        self.fields_sixlowpan = ["address", "name", "RSSI", "type", "channel", "timestamp"]
 
     # ====================
     # Rebuild
@@ -126,7 +136,7 @@ class GUI:
                 relief=tk.RAISED,
                 padx=5,
                 pady=10,
-                width=46,
+                width=50,
             )
         self.button_start_scan.grid(columnspan=2, row=0, column=0, sticky="n")
         
@@ -341,7 +351,10 @@ class GUI:
         )
         self.WiFi_sniffer.set_wifi_device_table(self.wifi_device_table)
 
-        self.display_wifi_device()
+        try:
+            self.display_wifi_device()
+        except:
+            print("No data found for wifi devices")
 
     def create_wifi_networks_frame(self):
         # create WiFi network table
@@ -391,7 +404,10 @@ class GUI:
             self.wifi_device_table,
         )
 
-        self.display_wifi_network()
+        try:
+            self.display_wifi_network()
+        except:
+            print("No data found for wifi networks")
 
     def display_wifi_device(self):
 
@@ -463,7 +479,10 @@ class GUI:
             self.ble_device_scrollable_frame.item_frame, self.add_seized_device_row
         )
 
-        self.display_ble_data()
+        try:
+            self.display_ble_data()
+        except:
+            print("No data found for BLE")
 
     #call the data in file to display it
     def display_ble_data(self):
@@ -576,6 +595,11 @@ class GUI:
             self.zigbee_device_scrollable_frame.item_frame, self.add_seized_device_row
         )
 
+        try:
+            self.display_zigbee_device()
+        except:
+            print("No data found for zigbee device")
+
     def create_zigbee_networks_frame(self):
         # create ZigBee network table
         self.zigbee_network_scrollable_frame = ScrollFrame(
@@ -619,6 +643,43 @@ class GUI:
             self.ZigBee_sniffer,
             self.zigbee_device_table,
         )
+
+        try:
+            self.display_zigbee_network()
+        except:
+            print("No data found for zigbee networks")
+
+    def display_zigbee_device(self):
+
+        file = open("save/log_zigbee_device.csv", "r")
+        for line in file:
+
+            device = Device(
+                address=line.split(";")[0],
+                RSSI=line.split(";")[1],
+                type=line.split(";")[2],
+                timestamp=line.split(";")[3],
+                channel=line.split(";")[4],
+                name=line.split(";")[5],
+                extAddress=line.split(";")[6]
+            )
+
+            self.zigbee_device_table.add_row(device)
+
+    def display_zigbee_network(self):
+
+        file = open("save/log_zigbee_networks.csv", "r")
+        for line in file:
+
+            network = Network(
+                ID=line.split(";")[0],
+                RSSI=line.split(";")[1],
+                channel=line.split(";")[2],
+                type=line.split(";")[3],
+                timestamp=line.split(";")[4]
+            )
+
+            self.zigbee_network_table.add_row(network)
 
     # ====================
     # 6LoWPAN frames
@@ -674,6 +735,27 @@ class GUI:
             self.add_seized_device_row,
         )
 
+        try:
+            self.display_sixlowpan()
+        except:
+            print("No data found for 6loWpan")
+
+    def display_sixlowpan(self):
+
+        file = open("save/log_zigbee_device.csv", "r")
+        for line in file:
+
+            device = Device(
+                address=line.split(";")[0],
+                RSSI=line.split(";")[1],
+                type=line.split(";")[2],
+                timestamp=line.split(";")[3],
+                channel=line.split(";")[4],
+                #name=line.split(";")[5]
+            )
+        
+        self.sixlowpan_device_table.add_row(device)
+
     # ====================
     # Buttons functions
     # ====================
@@ -698,28 +780,6 @@ class GUI:
                 self.remove_wifi_network_row,
             )
 
-        except Exception as e:
-            self.logger.error(f"Error while starting scan of WiFiSniffer: {e}")
-
-    def on_start_click(self):
-        self.logger.debug("Start clicked")
-        try:
-            self.BLE_sniffer.start(
-                self.add_ble_device_row,
-                self.update_ble_device_row,
-                self.remove_ble_device_row,
-            )
-        except Exception as e:
-            self.logger.error(f"Error while starting scan of BLESniffer: {e}")
-        try:
-            self.WiFi_sniffer.start(
-                self.add_wifi_device_row,
-                self.update_wifi_device_row,
-                self.remove_wifi_device_row,
-                self.add_wifi_network_row,
-                self.update_wifi_network_row,
-                self.remove_wifi_network_row,
-            )
         except Exception as e:
             self.logger.error(f"Error while starting scan of WiFiSniffer: {e}")
 
@@ -818,11 +878,6 @@ class GUI:
         print(key)
 
     def add_wifi_device_row(self, device):
-        #if device.key in self.seized_devices:
-        #    pass
-        #else:
-        #    self.wifi_device_table.add_row(device)
-
         if device.key in self.seized_devices:
             pass
         else:
@@ -879,59 +934,68 @@ class GUI:
     # ZigBee Call back functions
     # ====================
     def add_zigbee_network_row(self, network):
-        #self.zigbee_network_table.add_row(network)
-
-        print(network)
-
         if os.path.isfile("save/log_zigbee_networks.csv") == False:
-            CSV.write_csv_header("save/log_zigbee_networks.csv", self.fields_wifi_networks)
+            CSV.write_csv_header("save/log_zigbee_networks.csv", self.fields_zigbee_networks)
             print("create file")
 
-        CSV.write_csv_line("save/log_zigbee_networks.csv", self.fields_wifi_networks, network)
+        CSV.write_csv_line("save/log_zigbee_networks.csv", self.fields_zigbee_networks, network)
 
     def update_zigbee_network_row(self, key, field, value):
-        self.zigbee_network_table.update_row(key, field, value)
+        #Only display the update if the screen is displayed
+        #Must be updated to update the log file directly
+        try:
+            self.zigbee_network_table.update_row(key, field, value)
+        except:
+            pass
 
     def remove_zigbee_network_row(self, key):
-        self.zigbee_network_table.remove_row(key)
+        print(key)
+        #self.zigbee_network_table.remove_row(key)
 
     def add_zigbee_device_row(self, device):
-        #if device.key in self.seized_devices:
-        #    pass
-        #else:
-        #    self.zigbee_device_table.add_row(device)
-
-        print(device)
-
         if os.path.isfile("save/log_zigbee_device.csv") == False:
-            CSV.write_csv_header("save/log_zigbee_device.csv", self.fields_wifi_networks)
+            CSV.write_csv_header("save/log_zigbee_device.csv", self.fields_zigbee_devices)
             print("create file")
 
-        CSV.write_csv_line("save/log_zigbee_device.csv", self.fields_wifi_networks, device)
+        CSV.write_csv_line("save/log_zigbee_device.csv", self.fields_zigbee_devices, device)
 
     def update_zigbee_device_row(self, key, field, value):
-        if key in self.seized_devices:
+        try:
+            if key in self.seized_devices:
+                pass
+            else:
+                self.zigbee_device_table.update_row(key, field, value)
+        except:
             pass
-        else:
-            self.zigbee_device_table.update_row(key, field, value)
 
     def remove_zigbee_device_row(self, key):
-        self.zigbee_device_table.remove_row(key)
+        print(key)
+        #self.zigbee_device_table.remove_row(key)
 
     # ====================
     # 6LoWPAN call back functions
     # ====================
     def add_sixlowpan_device_row(self, device):
-        if device.key in self.seized_devices:
-            pass
-        else:
-            self.sixlowpan_device_table.add_row(device)
+        #if device.key in self.seized_devices:
+        #    pass
+        #else:
+        #    self.sixlowpan_device_table.add_row(device)
+
+        if os.path.isfile("save/log_sixlowpan.csv") == False:
+            CSV.write_csv_header("save/log_sixlowpan.csv", self.fields_sixlowpan)
+            print("create file")
+
+        CSV.write_csv_line("save/log_sixlowpan.csv", self.fields_sixlowpan, device)
 
     def update_sixlowpan_device_row(self, key, field, value):
-        if key in self.seized_devices:
+        try:
+            if key in self.seized_devices:
+                pass
+            else:
+                self.sixlowpan_device_table.update_row(key, field, value)
+        except:
             pass
-        else:
-            self.sixlowpan_device_table.update_row(key, field, value)
 
     def remove_sixlowpan_device_row(self, key):
-        self.sixlowpan_device_table.remove_row(key)
+        print(key)
+        #self.sixlowpan_device_table.remove_row(key)

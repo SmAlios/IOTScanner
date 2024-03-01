@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter.ttk import Progressbar, Style
 import os
 from time import sleep
 from devices.csv import CSV
@@ -9,9 +8,8 @@ from gui.scrollable_frame import ScrollFrame
 from gui.network_gui import NetworkTable
 from gui.device_gui import DeviceTable, SeizedDeviceTable
 from logs.logger import logger
-
-from PIL import ImageTk, Image
 import os
+from .myprogressbar import Myprogressbar
 
 
 class GUI:
@@ -25,17 +23,21 @@ class GUI:
 
         self.pannels = ["Home","WiFi","BLE","Zigbee","6loWPAN"]
         self.current_pannel = self.pannels[current_pannel]
-        self.call_frequence_widget(self.current_pannel)
-
         self.fields_ble = ["address", "RSSI", "type", "timestamp", "channel", "name", "extAddress"]
-
         self.fields_wifi_networks = ["ID", "RSSI", "channel", "type", "timestamp", "BSSID"]
         self.fields_wifi_devices = self.fields_ble
-
         self.fields_zigbee_networks = ["ID", "RSSI", "channel", "type", "timestamp"]
         self.fields_zigbee_devices = ["address", "name", "RSSI", "type", "channel", "extAddress", "timestamp"]
-
         self.fields_sixlowpan = ["address", "name", "RSSI", "type", "channel", "timestamp"]
+
+        self.zigbee_scan_start = 11
+        self.zigbee_scan_progress = 0
+        self.zigbee_scan_end = 27
+
+        self.scan_progressbar = Myprogressbar()
+        print("test")
+
+        self.call_frequence_widget(self.current_pannel)
 
     # ====================
     # Rebuild
@@ -118,7 +120,7 @@ class GUI:
             borderwidth=5,
             relief=tk.RAISED,
             padx=50,
-            pady=80,
+            pady=60,
             background="white",
         )
         self.home_frame.grid(row=0, column=0, sticky="nsew")
@@ -142,13 +144,16 @@ class GUI:
         
         self.home_frame_frequences_btn()
         self.home_control_btn()
-                
+
+        self.scan_progressbar.draw_progressbar(self.home_frame, columnspan=2, column=0, row=4)
+
         self.home_frame.grid_columnconfigure(0, weight=1)
         self.home_frame.grid_columnconfigure(1, weight=1)
         self.home_frame.grid_rowconfigure(0, weight=1)
         self.home_frame.grid_rowconfigure(1, weight=1)
         self.home_frame.grid_rowconfigure(2, weight=1)
         self.home_frame.grid_rowconfigure(3, weight=1)
+        self.home_frame.grid_rowconfigure(4, weight=1)
 
     def home_frame_frequences_btn(self):
         buttons_list = [
@@ -797,6 +802,13 @@ class GUI:
             )
         except Exception as e:
             self.logger.error(f"Error while starting scan of ZigBeeSniffer: {e}")
+
+        #start a thread for the progress bar. The progress is calculate on Zigbee scan
+        self.scan_progressbar.start(
+            self.ZigBee_sniffer,
+            self.zigbee_scan_start,
+            self.zigbee_scan_end
+        )
 
     def on_stop_click(self):
         self.logger.debug("Stop clicked")

@@ -10,6 +10,7 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
     def __init__(self, serialport, baudrate):
         super().__init__(serialport, baudrate, type="ZigBee")
 
+        self.progressbar_value = 0
         self.oldChannels = []
         self.channels = []
         self.simulation = False
@@ -134,6 +135,9 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
                         self.channels.append(channel)
                         self.serial.reset_input_buffer()
                         break
+
+                #increment the home progressbar
+                self.progressbar_value += 1
 
     def sniff(self):
         if not self.channels:
@@ -404,3 +408,6 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
         self.restart = True
         self.channels = self.oldChannels
         self.oldChannels = []
+
+    def get_progressbar_value(self):
+        return self.progressbar_value

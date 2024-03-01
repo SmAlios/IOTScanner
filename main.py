@@ -68,7 +68,7 @@ def main():
     #Because of the screen not charging fast enought, with a classical service,
     #the software obtain the error "_tkinter.TclError: couldn't connect to display ':0'"
     #so a delay is the only solution to launch the softwre on start
-    delay_on_start()
+    #delay_on_start()
 
     # Create the main window
     root = tk.Tk()

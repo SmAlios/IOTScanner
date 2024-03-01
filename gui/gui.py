@@ -10,6 +10,7 @@ from gui.device_gui import DeviceTable, SeizedDeviceTable
 from logs.logger import logger
 import os
 from .myprogressbar import Myprogressbar
+from devices.compress import Compress
 
 
 class GUI:
@@ -35,7 +36,10 @@ class GUI:
         self.zigbee_scan_end = 27
 
         self.scan_progressbar = Myprogressbar()
-        print("test")
+        self.scv_dir = "csv_dir"
+        self.csv_file = CSV("csv_dir")
+
+        self.scan_started = False
 
         self.call_frequence_widget(self.current_pannel)
 
@@ -129,17 +133,26 @@ class GUI:
         self.master.grid_columnconfigure(0, minsize=800, weight=2)
         self.master.grid_rowconfigure(0, weight=1)
 
+        if self.scan_started == False:
+            txt = "start scan"
+            cmd = self.start_scan
+        elif self.scan_started == True:
+            txt = "stop scan"
+            cmd = self.stop_scan
+        else:
+            txt = "[scan done]"
+
         self.button_start_scan = tk.Button(
-                self.home_frame,
-                text="start scan",
-                font=("Arial", 14),
-                command=self.start_scan,
-                borderwidth=5,
-                relief=tk.RAISED,
-                padx=5,
-                pady=10,
-                width=50,
-            )
+            self.home_frame,
+            text=txt,
+            font=("Arial", 14),
+            command=cmd,
+            borderwidth=5,
+            relief=tk.RAISED,
+            padx=5,
+            pady=10,
+            width=50,
+        )
         self.button_start_scan.grid(columnspan=2, row=0, column=0, sticky="n")
         
         self.home_frame_frequences_btn()
@@ -810,7 +823,12 @@ class GUI:
             self.zigbee_scan_end
         )
 
-    def on_stop_click(self):
+        self.scan_started = True
+        self.button_start_scan['text'] = "stop scan"
+        self.button_start_scan['command'] = self.stop_scan
+        self.home_frame.update_idletasks()
+
+    def stop_scan(self):
         self.logger.debug("Stop clicked")
         # stop reader threads when button clicked
         try:
@@ -825,6 +843,15 @@ class GUI:
             self.ZigBee_sniffer.stop()
         except Exception as e:
             self.logger.error(f"Error while stoping scan of {self.ZigBee_sniffer}: {e}")
+
+        #compress the files to an archive and delete old files
+        compress_data = Compress(self.scv_dir)
+        compress_data.launch()
+
+        self.scan_started = ""
+        self.button_start_scan['text'] = "[scan done]"
+        self.button_start_scan['command'] = ""
+        self.home_frame.update_idletasks()
 
     def button_change_page_home(self):
         self.change_screen(0)
@@ -871,11 +898,11 @@ class GUI:
     # WiFi call back functions
     # ====================
     def add_wifi_network_row(self, network):
-        if os.path.isfile("save/log_wifi_networks.csv") == False:
-            CSV.write_csv_header("save/log_wifi_networks.csv", self.fields_wifi_networks)
+        if os.path.isfile(f"{self.scv_dir}/log_wifi_networks.csv") == False:
+            self.csv_file.write_csv_header(f"{self.scv_dir}/log_wifi_networks.csv", self.fields_wifi_networks)
             print("create file")
 
-        CSV.write_csv_line("save/log_wifi_networks.csv", self.fields_wifi_networks, network)
+        self.csv_file.write_csv_line(f"{self.scv_dir}/log_wifi_networks.csv", self.fields_wifi_networks, network)
 
     def update_wifi_network_row(self, key, field, value):
         #Only display the update if the screen is displayed
@@ -893,11 +920,11 @@ class GUI:
         if device.key in self.seized_devices:
             pass
         else:
-            if os.path.isfile("save/log_wifi_devices.csv") == False:
-                CSV.write_csv_header("save/log_wifi_devices.csv", self.fields_wifi_devices)
+            if os.path.isfile(f"{self.scv_dir}/log_wifi_devices.csv") == False:
+                self.csv_file.write_csv_header(f"{self.scv_dir}/log_wifi_devices.csv", self.fields_wifi_devices)
                 print("create file")
 
-            CSV.write_csv_line("save/log_wifi_devices.csv", self.fields_wifi_devices, device)
+            self.csv_file.write_csv_line(f"{self.scv_dir}/log_wifi_devices.csv", self.fields_wifi_devices, device)
 
     def update_wifi_device_row(self, key, field, value):
         #Only display the update if the screen is displayed
@@ -921,11 +948,11 @@ class GUI:
         if device.key in self.seized_devices:
             pass
         else:
-            if os.path.isfile("save/log_ble.csv") == False:
-                CSV.write_csv_header("save/log_ble.csv", self.fields_ble)
+            if os.path.isfile(f"{self.scv_dir}/log_ble.csv") == False:
+                self.csv_file.write_csv_header(f"{self.scv_dir}/log_ble.csv", self.fields_ble)
                 print("create file")
 
-            CSV.write_csv_line("save/log_ble.csv", self.fields_ble, device)
+            self.csv_file.write_csv_line(f"{self.scv_dir}/log_ble.csv", self.fields_ble, device)
 
     def update_ble_device_row(self, key, field, value):
         #Only display the update if the screen is displayed
@@ -946,11 +973,11 @@ class GUI:
     # ZigBee Call back functions
     # ====================
     def add_zigbee_network_row(self, network):
-        if os.path.isfile("save/log_zigbee_networks.csv") == False:
-            CSV.write_csv_header("save/log_zigbee_networks.csv", self.fields_zigbee_networks)
+        if os.path.isfile(f"{self.scv_dir}/log_zigbee_networks.csv") == False:
+            self.csv_file.write_csv_header(f"{self.scv_dir}/log_zigbee_networks.csv", self.fields_zigbee_networks)
             print("create file")
 
-        CSV.write_csv_line("save/log_zigbee_networks.csv", self.fields_zigbee_networks, network)
+        self.csv_file.write_csv_line(f"{self.scv_dir}/log_zigbee_networks.csv", self.fields_zigbee_networks, network)
 
     def update_zigbee_network_row(self, key, field, value):
         #Only display the update if the screen is displayed
@@ -965,11 +992,11 @@ class GUI:
         #self.zigbee_network_table.remove_row(key)
 
     def add_zigbee_device_row(self, device):
-        if os.path.isfile("save/log_zigbee_device.csv") == False:
-            CSV.write_csv_header("save/log_zigbee_device.csv", self.fields_zigbee_devices)
+        if os.path.isfile(f"{self.scv_dir}/log_zigbee_device.csv") == False:
+            self.csv_file.write_csv_header(f"{self.scv_dir}/log_zigbee_device.csv", self.fields_zigbee_devices)
             print("create file")
 
-        CSV.write_csv_line("save/log_zigbee_device.csv", self.fields_zigbee_devices, device)
+        self.csv_file.write_csv_line(f"{self.scv_dir}/log_zigbee_device.csv", self.fields_zigbee_devices, device)
 
     def update_zigbee_device_row(self, key, field, value):
         try:
@@ -988,16 +1015,11 @@ class GUI:
     # 6LoWPAN call back functions
     # ====================
     def add_sixlowpan_device_row(self, device):
-        #if device.key in self.seized_devices:
-        #    pass
-        #else:
-        #    self.sixlowpan_device_table.add_row(device)
-
-        if os.path.isfile("save/log_sixlowpan.csv") == False:
-            CSV.write_csv_header("save/log_sixlowpan.csv", self.fields_sixlowpan)
+        if os.path.isfile(f"{self.scv_dir}/log_sixlowpan.csv") == False:
+            self.csv_file.write_csv_header(f"{self.scv_dir}/log_sixlowpan.csv", self.fields_sixlowpan)
             print("create file")
 
-        CSV.write_csv_line("save/log_sixlowpan.csv", self.fields_sixlowpan, device)
+        self.csv_file.write_csv_line(f"{self.scv_dir}/log_sixlowpan.csv", self.fields_sixlowpan, device)
 
     def update_sixlowpan_device_row(self, key, field, value):
         try:

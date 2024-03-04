@@ -28,7 +28,7 @@ build_service=Y
 #don't give specific right, it only change your desktop's wallpaper
 rccu_membership=Y
 
-sudo apt install xrdp xorg sudo usbutils git -y
+sudo apt install xrdp xorg sudo usbutils git curl -y
 
 #delete the pip security who disable the download of external packages
 sudo rm -rf /usr/lib/python3.11/EXTERNALLY-MANAGED
@@ -109,14 +109,18 @@ else
 fi
 
 #change wallpaper
-sudo apt install curl -y
-curl https://www.flixist.com/wp-content/uploads/2020/09/Borat_two_title.jpg --output "very_nice.jpg"
-cp very_nice.jpg /home/$USER/Desktop/very_nice.jpg
-
 if [[ $rccu_membership -eq "Y" ]]
 then
-    sudo xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor1/workspace0/last-image -s /home/admin/Documents/very_nice.jpg
+    curl https://raw.githubusercontent.com/SmAlios/IOTScanner/main/wallpaper/rccu.png --output "rccu.png"
+    wallpaper="rccu.png"
+else
+    curl https://www.flixist.com/wp-content/uploads/2020/09/Borat_two_title.jpg --output "very_nice.jpg"
+    wallpaper="very_nice.jpg"
 fi
+
+cp $wallpaper /home/$USER/Documents/$wallpaper
+sudo xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor1/workspace0/last-image -s $wallpaper
+rm $wallpaper
 
 #modifications on project
 sudo mkdir IOTScanner/logs

@@ -1,6 +1,5 @@
 import tkinter as tk
 import os
-from time import sleep
 from devices.csv import CSV
 from devices.device import Device
 from devices.network import Network
@@ -8,9 +7,11 @@ from gui.scrollable_frame import ScrollFrame
 from gui.network_gui import NetworkTable
 from gui.device_gui import DeviceTable, SeizedDeviceTable
 from logs.logger import logger
-import os
 from .myprogressbar import Myprogressbar
 from devices.compress import Compress
+
+from time import sleep
+import platform
 
 
 class GUI:
@@ -156,7 +157,9 @@ class GUI:
         self.button_start_scan.grid(columnspan=2, row=0, column=0, sticky="n")
         
         self.home_frame_frequences_btn()
-        self.home_control_btn()
+
+        if platform.system() != "Windows":
+            self.home_control_btn()
 
         self.scan_progressbar.draw_progressbar(self.home_frame, columnspan=2, column=0, row=4)
 
@@ -166,7 +169,9 @@ class GUI:
         self.home_frame.grid_rowconfigure(1, weight=1)
         self.home_frame.grid_rowconfigure(2, weight=1)
         self.home_frame.grid_rowconfigure(3, weight=1)
-        self.home_frame.grid_rowconfigure(4, weight=1)
+
+        if platform.system() != "Windows":
+            self.home_frame.grid_rowconfigure(4, weight=1)
 
     def home_frame_frequences_btn(self):
         buttons_list = [

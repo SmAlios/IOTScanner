@@ -123,6 +123,12 @@ sudo mkdir IOTScanner/logs
 sudo touch IOTScanner/logs/logs.log
 sudo chown -R $USER:$USER IOTScanner/logs
 
+cd IOTScanner
+sed -i "52s/.*/        COM_BLESniffer = $ble_antenna/" main.py
+sed -i "53s/.*/        COM_ZigBeeSniffer = $zigbee_antenna/" main.py
+sed -i "54s/.*/        COM_WiFiSniffer = $wifi_antenna/" main.py
+cd ../
+
 #allow the user to restart and shtdown without asking password
 sudo echo "$USER ALL=NOPASSWD: /sbin/reboot, /sbin/poweroff" | sudo tee -a /etc/sudoers
 

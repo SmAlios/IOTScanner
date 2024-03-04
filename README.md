@@ -10,7 +10,7 @@ If you'r from the police forces, prefer to use the "portable version" of the pro
 - detecting WiFi devices and networks
 - display signal force (RSSI)
 - compress the gathered data in an archive
-- compatible with windows an python
+- compatible with windows and linux
 
 ## How to use
 The software automatically run on OS startup.
@@ -22,7 +22,9 @@ At any time, you can stop the scan. It'll create archive with the collected data
 
 ## road map
 In the next updates could come those features :
-- 
+- screen with a radar to display the distance from IOT devices
+- triangulate the IOT devices position with a GPS beacon
+- 3D plan of a case for the Raspberry
 
 ## Needed hardware
 You need some hardware to perform the software.

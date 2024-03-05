@@ -11,8 +11,32 @@ class Myprogressbar(threading.Thread):
     def draw_progressbar(self, master, columnspan, row, column):
         self.master = master
 
-        style = Style()
-        style.configure("TProgressbar", foreground="green")
+        self.style = Style()
+        self.style.layout(
+            'text.Horizontal.TProgressbar',
+            [
+                (
+                    'Horizontal.Progressbar.trough', 
+                    {'children':
+                        [
+                            ('Horizontal.Progressbar.pbar',
+                                {
+                                    'side': 'left',
+                                    'sticky': 'ns'
+                                }
+                            )
+                        ],
+                        'sticky': 'nswe'
+                    }
+                ),
+                (
+                    'Horizontal.Progressbar.label',
+                    {'sticky': 'nswe'}
+                )
+            ]
+        )
+        self.style.configure('text.Horizontal.TProgressbar', text='0 %', anchor='center', foreground='black', background='green')
+        #style.configure("TProgressbar", background="green")
 
         self.progressbar_label= tk.Label(
             self.master,
@@ -22,7 +46,8 @@ class Myprogressbar(threading.Thread):
 
         self.progressbar = Progressbar(
                 self.master,
-                style="TProgressbar",
+                cursor="spider",
+                style="text.Horizontal.TProgressbar",
                 orient='horizontal',
                 length=520,
                 mode='determinate'
@@ -64,6 +89,7 @@ class Myprogressbar(threading.Thread):
             #print(f"{get_value} => {self.value}%")
 
             self.progressbar['value'] = self.value
+            self.style.configure('text.Horizontal.TProgressbar', text=f"{self.value} %")
             self.master.update_idletasks()
 
             sleep(1)

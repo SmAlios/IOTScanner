@@ -3,6 +3,9 @@ IOTScanner made as part of an internship at the PJF of Charleroi. This project i
 
 If you'r from the police forces, prefer to use the "portable version" of the project. Otherwise, you'll need to perform the software directly on a computer.
 
+## Version
+Last stable version is 1.0.0
+
 ## Features
 - detecting BLE devices
 - detecting ZigBee devices and networks

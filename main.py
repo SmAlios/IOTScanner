@@ -8,6 +8,10 @@ from sniffers.WiFi_Sniffer import WiFiSniffer
 from sniffers.ZigBee_Sniffer import ZigBeeSniffer
 from time import sleep
 
+#apply a delay on start (required if want to run on OS start)
+#if you don't want that the software automaticaly run on start, set False
+delay_on_start = True
+
 MyBLESniffer = None
 MyWiFiSniffer = None
 MyZigBeeSniffer = None
@@ -35,12 +39,6 @@ def on_closing():
         pass
     os._exit(1)
 
-def delay_on_start():
-    if os.system("ps --no-headers -o comm 1") == "systemd":
-        pass
-    else:
-        sleep(8)
-
 
 def main():
     # Create Sniffers
@@ -49,9 +47,9 @@ def main():
 
     #configured my personal env during dev
     if os_used == "Linux":
-        COM_BLESniffer = "/dev/ttyACM1" #acm1
-        COM_ZigBeeSniffer = "/dev/ttyACM0" #usb0
-        COM_WiFiSniffer = "/dev/ttyUSB0" #acm0
+        COM_BLESniffer = "/dev/ttyACM1"
+        COM_ZigBeeSniffer = "/dev/ttyACM0"
+        COM_WiFiSniffer = "/dev/ttyUSB0"
     elif os_used == "Windows":
         COM_BLESniffer = "COM6"
         COM_ZigBeeSniffer = "COM5"
@@ -68,7 +66,8 @@ def main():
     #Because of the screen not charging fast enought, with a classical service,
     #the software obtain the error "_tkinter.TclError: couldn't connect to display ':0'"
     #so a delay is the only solution to launch the softwre on start
-    #delay_on_start()
+    if delay_on_start == True:
+        sleep(8)
 
     # Create the main window
     root = tk.Tk()
@@ -83,7 +82,7 @@ def main():
         root.geometry("800x480")
     else:
         print("Error occure, os unrecognized")
-    
+
     root.protocol("WM_DELETE_WINDOW", on_closing)
 
     # Create GUI instance

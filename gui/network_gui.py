@@ -106,35 +106,34 @@ class NetworkRow:
             self.timestamp_label.destroy()
 
     def on_checkbox_click(self, button, variable):
-        for network_row in self.get_network_rows().values():
-            # if current button is the one being checked
-            if network_row.check_button == button:
-                # if not already checked
-                if(variable.get()):
-                    self.device_table.filter(self.network.channel)
-                    network_row.check_button.select()
-                    self.set_color("red")
-                    if (self.network.type == "WiFi-2.4GHz"):
-                        self.Sniffer.serial.write(str(self.network.channel).encode('utf-8'))
-                    elif (self.network.type == "ZigBee"):
-                        self.Sniffer.setChannel(self.network.channel)
-                # if already clicked
-                else:
-                    self.device_table.unfilter()
-                    network_row.check_button.deselect()
-                    self.set_color('#d9d9d9')
-                    if (self.network.type == "WiFi-2.4GHz"):
-                        self.Sniffer.serial.write(str(-1).encode('utf-8'))
-                    elif (self.network.type == "ZigBee"):
-                        self.Sniffer.unsetChannel()
-            # current checkbutton not clicked
-            else:
-                network_row.check_button.deselect()
-                network_row.set_color('#d9d9d9')
 
-    def __repr__(self):
-        row = self.RSSI_label.grid_info()['row']
-        return f'NetworkRow(row: {row}, network: {self.network.__repr__()})'
+        if self.check_button == button:
+            # if not already checked
+            if(variable.get()):
+                self.device_table.filter(self.network.channel)
+                self.check_button.select()
+                self.set_color("red")
+                if (self.network.type == "WiFi-2.4GHz"):
+                    self.Sniffer.serial.write(str(self.network.channel).encode('utf-8'))
+                elif (self.network.type == "ZigBee"):
+                    self.Sniffer.setChannel(self.network.channel)
+            # if already clicked
+            else:
+                self.device_table.unfilter()
+                self.check_button.deselect()
+                self.set_color('#d9d9d9')
+                if (self.network.type == "WiFi-2.4GHz"):
+                    self.Sniffer.serial.write(str(-1).encode('utf-8'))
+                elif (self.network.type == "ZigBee"):
+                    self.Sniffer.unsetChannel()
+        # current checkbutton not clicked
+        else:
+            self.check_button.deselect()
+            self.set_color('#d9d9d9')
+
+    #def __repr__(self):
+    #    row = self.RSSI_label.grid_info()['row']
+    #    return f'NetworkRow(row: {row}, network: {self.network.__repr__()})'
 
 
 class NetworkTable:

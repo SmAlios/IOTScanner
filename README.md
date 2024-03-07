@@ -1,7 +1,7 @@
 # IOTScanner
-IOTScanner made as part of an internship at the PJF of Charleroi. This project is an upgrade and port of igorferro1/IoT-Hound's project on Raspberry Raspberry pi 4 with a Touch Display. The purpose of the project is to permeit to the police forces to detect IOT devices on a crime scene.
+This project is an upgrade and port of igorferro1/IoT-Hound's project on Raspberry Raspberry pi 4 with a Touch Display. The purpose of the project is to permeit to detect IOT devices.
 
-If you'r from the police forces, prefer to use the "portable version" of the project. Otherwise, you'll need to perform the software directly on a computer.
+prefer to use the "portable version" of the project. Otherwise, you'll need to perform the software directly on a computer.
 
 ## Version
 Last stable version is 1.0.0

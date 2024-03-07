@@ -11,7 +11,7 @@ class CSV:
         try:
             if path.exists(self.CSV_dir) == False:
                 makedirs(self.CSV_dir)
-        except FileExistsError:
+        except:
             #folder already exist
             pass
 

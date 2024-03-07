@@ -35,7 +35,7 @@ class Myprogressbar(threading.Thread):
                 )
             ]
         )
-        self.style.configure('text.Horizontal.TProgressbar', text='0 %', anchor='center', foreground='black', background='green')
+        self.style.configure('text.Horizontal.TProgressbar', text=f"{self.value} %", anchor='center', foreground='black', background='green')
         #style.configure("TProgressbar", background="green")
 
         self.progressbar_label= tk.Label(

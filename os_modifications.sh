@@ -24,9 +24,8 @@ touch_display=Y
 #please specify if you want to create a service who'll launch the app at each OS start (only for linux)  (Y/N)
 build_service=Y
 
-#scpecify if you'r a member of the CCU's belgian federal police departement (Y/N)
-#don't give specific right, it only change your desktop's wallpaper
-rccu_membership=Y
+#Want a beautiful wallpaper (Y/N)
+want_wallpaper=Y
 
 sudo apt install xrdp xorg sudo usbutils git curl -y
 
@@ -109,7 +108,7 @@ else
 fi
 
 #change wallpaper
-if [[ $rccu_membership -eq "Y" ]]
+if [[ $want_wallpaper -eq "Y" ]]
 then
     curl https://raw.githubusercontent.com/SmAlios/IOTScanner/main/wallpaper/rccu.png --output "rccu.png"
     wallpaper="rccu.png"

@@ -434,7 +434,7 @@ class GUI:
 
     def display_wifi_device(self):
 
-        file = open("save/log_wifi_devices.csv", "r")
+        file = open(f"{self.scv_dir}/log_wifi_devices.csv", "r")
         for line in file:
 
             device = Device(
@@ -451,7 +451,7 @@ class GUI:
 
     def display_wifi_network(self):
 
-        file = open("save/log_wifi_networks.csv", "r")
+        file = open(f"{self.scv_dir}/log_wifi_networks.csv", "r")
         for line in file:
 
             network = Network(
@@ -510,7 +510,7 @@ class GUI:
     #call the data in file to display it
     def display_ble_data(self):
 
-        file = open("save/log_ble.csv", "r")
+        file = open(f"{self.scv_dir}/log_ble.csv", "r")
         for line in file:
 
             device = Device(
@@ -674,7 +674,7 @@ class GUI:
 
     def display_zigbee_device(self):
 
-        file = open("save/log_zigbee_device.csv", "r")
+        file = open(f"{self.scv_dir}/log_zigbee_device.csv", "r")
         for line in file:
 
             device = Device(
@@ -691,7 +691,7 @@ class GUI:
 
     def display_zigbee_network(self):
 
-        file = open("save/log_zigbee_networks.csv", "r")
+        file = open(f"{self.scv_dir}/log_zigbee_networks.csv", "r")
         for line in file:
 
             network = Network(
@@ -765,7 +765,7 @@ class GUI:
 
     def display_sixlowpan(self):
 
-        file = open("save/log_zigbee_device.csv", "r")
+        file = open(f"{self.scv_dir}/log_zigbee_device.csv", "r")
         for line in file:
 
             device = Device(

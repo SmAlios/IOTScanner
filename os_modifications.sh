@@ -116,10 +116,10 @@ then
     echo -e "\n[Service]" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "Type=simple" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "User=$USER" | sudo tee -a /etc/systemd/system/ziotscanner.service
-    echo "WorkingDirectory=/home/$USER/Desktop/IOTScanner" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo 'Environment="DISPLAY=:0"' | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "Environment='XAUTHORITY=/home/$USER/.Xauthority'" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "ExecStart=/home/$USER/Desktop/IOTScanner/main.py $(echo '$')DISPLAY $(echo '$')XAUTHORITY > /tmp/iotlog.log 2>&1" | sudo tee -a /etc/systemd/system/ziotscanner.service
+    echo "WorkingDirectory=/home/$USER/Desktop/IOTScanner" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "Restart=On-Failure" | sudo tee -a /etc/systemd/system/ziotscanner.service
 
     echo -e "\n[Install]" | sudo tee -a /etc/systemd/system/ziotscanner.service

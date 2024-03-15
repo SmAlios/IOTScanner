@@ -1,7 +1,6 @@
 #!/bin/python3
 import tkinter as tk
-import signal, os
-import platform
+import signal, os, subprocess, platform
 from gui.gui import GUI
 from sniffers.BLE_Sniffer import BLESniffer
 from sniffers.WiFi_Sniffer import WiFiSniffer
@@ -19,6 +18,28 @@ MyZigBeeSniffer = None
 COM_BLESniffer = ""
 COM_ZigBeeSniffer = ""
 COM_WiFiSniffer = ""
+
+def init_antennas():
+    data_antennas = subprocess.run(["./init_antennas.sh"], capture_output=True, text=True)
+    data_antennas = data_antennas.stdout.split("\n")
+    
+    for antenna in data_antennas:
+
+        if("Bluetooth" in antenna.split("_")):
+            COM_BLESniffer = antenna.split(" - ")[0]
+
+        elif("USB" in antenna.split("_")):
+            COM_WiFiSniffer = antenna.split(" - ")[0]
+
+        elif("UART" in antenna.split("_")):
+            COM_ZigBeeSniffer = antenna.split(" - ")[0]
+        else:
+            COM_BLESniffer = "/dev/ttyACM1"
+            COM_ZigBeeSniffer = "/dev/ttyACM0"
+            COM_WiFiSniffer = "/dev/ttyUSB0"
+
+    return [COM_BLESniffer, COM_ZigBeeSniffer, COM_WiFiSniffer]
+
 
 def signal_handler(sig, frame):
     on_closing()
@@ -47,9 +68,7 @@ def main():
 
     #configured my personal env during dev
     if os_used == "Linux":
-        COM_BLESniffer = "/dev/ttyACM1"
-        COM_ZigBeeSniffer = "/dev/ttyACM0"
-        COM_WiFiSniffer = "/dev/ttyUSB0"
+        COM_BLESniffer, COM_ZigBeeSniffer, COM_WiFiSniffer = init_antennas()
     elif os_used == "Windows":
         COM_BLESniffer = "COM6"
         COM_ZigBeeSniffer = "COM5"

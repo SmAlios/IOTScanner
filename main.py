@@ -22,7 +22,8 @@ COM_WiFiSniffer = ""
 def init_antennas():
     data_antennas = subprocess.run(["./init_antennas.sh"], capture_output=True, text=True)
     data_antennas = data_antennas.stdout.split("\n")
-    
+    i = 0
+
     for antenna in data_antennas:
 
         if("Bluetooth" in antenna.split("_")):
@@ -34,6 +35,10 @@ def init_antennas():
         elif("UART" in antenna.split("_")):
             COM_ZigBeeSniffer = antenna.split(" - ")[0]
         else:
+            i += 1
+
+        #if one antenna is not recognized, the default conf is used
+        if(i > 0):
             COM_BLESniffer = "/dev/ttyACM1"
             COM_ZigBeeSniffer = "/dev/ttyACM0"
             COM_WiFiSniffer = "/dev/ttyUSB0"

@@ -115,10 +115,11 @@ then
 
     echo -e "\n[Service]" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "Type=simple" | sudo tee -a /etc/systemd/system/ziotscanner.service
-    echo "User=admin" | sudo tee -a /etc/systemd/system/ziotscanner.service
+    echo "User=$USER" | sudo tee -a /etc/systemd/system/ziotscanner.service
+    echo "WorkingDirectory=/home/$USER/Desktop/IOTScanner" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo 'Environment="DISPLAY=:0"' | sudo tee -a /etc/systemd/system/ziotscanner.service
-    echo 'Environment="XAUTHORITY=/home/admin/.Xauthority"' | sudo tee -a /etc/systemd/system/ziotscanner.service
-    echo "ExecStart=/home/admin/Desktop/IOTScanner/main.py $\DISPLAY $\XAUTHORITY > /tmp/iotlog.log 2>&1" | sudo tee -a /etc/systemd/system/ziotscanner.service
+    echo 'Environment="XAUTHORITY=/home/$USER/.Xauthority"' | sudo tee -a /etc/systemd/system/ziotscanner.service
+    echo "ExecStart=/home/$USER/Desktop/IOTScanner/main.py $(echo '$')DISPLAY $(echo '$')XAUTHORITY > /tmp/iotlog.log 2>&1" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "Restart=On-Failure" | sudo tee -a /etc/systemd/system/ziotscanner.service
 
     echo -e "\n[Install]" | sudo tee -a /etc/systemd/system/ziotscanner.service
@@ -146,14 +147,12 @@ fi
 cp $wallpaper /home/$USER/Documents/$wallpaper
 cd /home/$USER/Documents/
 sudo ln -sf /home/$USER/Documents/$wallpaper /etc/alternatives/desktop-background
-cd /home/$USER/Desktop/
 
-#modifications on project
-mkdir IOTScanner/logs
-touch IOTScanner/logs/logs.log
-sudo chown -R $USER:$USER IOTScanner/logs
-
-cd IOTScanner
+#project modifications
+cd /home/$USER/Desktop/IOTScanner/
+mkdir logs
+touch logs/logs.log
+sudo chown -R $USER:$USER logs
 sudo chmod +x main.py
 sudo chmod +x init_antennas.sh
 cd

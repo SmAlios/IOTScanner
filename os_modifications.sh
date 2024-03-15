@@ -1,4 +1,4 @@
-#!/bin/bahs
+#!/bin/bash
 
 #only run on linux like os
 #this file is originaly made for a raspberrypiOS with GUI equiped with a Touch Display
@@ -12,21 +12,59 @@
 # 4. Give the correct execution rights to the file (sudo chmod u+x <filename>)
 # 5. Execute the file (./<filename>) and respond to questions
 
-#please specify the user who'll use the software
-USER="<myUser>"
+RED="\e[31m"
+GREEN="\e[32m"
+ENDCOLOR="\e[0m"
+
+USER=$(whoami)
 ble_antenna=""
 wifi_antenna=""
 zigbee_antenna=""
 
-#please specify if you use a touch Display (Y/N)
-touch_display=Y
+#init setup variables
+touch_display=""
+build_service=""
+want_wallpaper=""
 
-#please specify if you want to create a service who'll launch the app at each OS start (only for linux)  (Y/N)
-build_service=Y
+echo "You will have to respond to three questions"
 
-#Want a beautiful wallpaper (Y/N)
-want_wallpaper=Y
+#does the user use a touch display
+flag=0
+while [[ $touch_display != "y" ]] && [[ $touch_display != "Y" ]] && [[ $touch_display != "n" ]] && [[ $touch_display != "N" ]]
+do
+    if [[ $flag == 1 ]]; then
+        echo "Character not recognized, try again"
+    fi
+    flag=1
+    echo "Does your device use a touch display for screen (Y/N)"
+    read touch_display
+done
 
+#does the user want a service for the software
+flag=0
+while [[ $build_service != "y" ]] && [[ $build_service != "Y" ]] && [[ $build_service != "n" ]] && [[ $build_service != "N" ]]
+do
+    if [[ $flag == 1 ]]; then
+        echo "Character not recognized, try again"
+    fi
+    flag=1
+    echo "Do you want to create a service who'll launch the app at each OS start (Y/N)"
+    read build_service
+done
+
+#does the user want a beautiful wallpaper
+flag=0
+while [[ $want_wallpaper != "y" ]] && [[ $want_wallpaper != "Y" ]] && [[ $want_wallpaper != "n" ]] && [[ $want_wallpaper != "N" ]]
+do
+    if [[ $flag == 1 ]]; then
+        echo "Character not recognized, try again"
+    fi
+    flag=1
+    echo "Do you want a beautiful wallpaper on your desktop (Y/N)"
+    read want_wallpaper
+done
+
+cd Desktop
 sudo apt install xrdp xorg sudo usbutils git curl -y
 
 #delete the pip security who disable the download of external packages
@@ -37,27 +75,14 @@ python3 -m pip install pip --upgrade
 git clone https://github.com/SmAlios/IOTScanner.git
 
 #select the tty* for antennas
-echo "/! \\ You may have configured the three antennas before this step /! \\"
-echo "If the three antennas are NOT configured, please quit. Otherwise continue"
-puseread -n1 -r -p "Press any key to continue..." key
+echo -e "\n\n"
+echo -e "${RED}/! \\ You may have configured the three antennas before this step /! \\ ${ENDCOLOR}"
+echo "If the three antennas are NOT configured, please quit (ctrl + c). Otherwise continue"
+read -r -p "Press any key to continue..." key
 
-ls /dev/tty* | grep tty[AU].
-echo "Connect the BLE antenna and press any key"
-puseread -n1 -r -p "Press any key to continue..." key
-
-ls /dev/tty* | grep tty[AU].
-echo "Enter the new terminal (tty) who has appeared"
-read ble_antenna
-
-echo "Now, connect the wifi antenna and press any key"
-ls /dev/tty* | grep tty[AU].
-echo "Enter the new terminal (tty) who has appeared"
-read wifi_antenna
-
-echo "Finally, connect the zigbee antenna and press any key"
-ls /dev/tty* | grep tty[AU].
-echo "Enter the new terminal (tty) who has appeared"
-read zigbee_antenna
+echo -e "\n"
+echo -e "\n${GREEN}Please connect the antennas on the USB slots, no matter the order ${ENDCOLOR}"
+read -r -p "When it's done, press any key to continue..." key
 
 #config for the touch display
 
@@ -77,6 +102,7 @@ fi
 if [[ $build_service -eq "Y" ]]
 then
     #the service name begin with a "z" to be in the last services to start (old systemv rule)
+    sudo rm /etc/systemd/system/ziotscanner.service
     sudo touch /etc/systemd/system/ziotscanner.service
 
     #complite the file
@@ -87,7 +113,7 @@ then
     echo "After=rc-local.service" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "Wants=graphical.target" | sudo tee -a /etc/systemd/system/ziotscanner.service
 
-    echo "[Service]" | sudo tee -a /etc/systemd/system/ziotscanner.service
+    echo -e "\n[Service]" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "Type=simple" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "User=admin" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo 'Environment="DISPLAY=:0"' | sudo tee -a /etc/systemd/system/ziotscanner.service
@@ -95,14 +121,14 @@ then
     echo "ExecStart=/home/admin/Desktop/IOTScanner/main.py $\DISPLAY $\XAUTHORITY > /tmp/iotlog.log 2>&1" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "Restart=On-Failure" | sudo tee -a /etc/systemd/system/ziotscanner.service
 
-    echo "[Install]" | sudo tee -a /etc/systemd/system/ziotscanner.service
+    echo -e "\n[Install]" | sudo tee -a /etc/systemd/system/ziotscanner.service
     echo "WantedBy=graphical.target" | sudo tee -a /etc/systemd/system/ziotscanner.service
 
     #create the service
     sudo chmod 644 /etc/systemd/system/ziotscanner.service
     sudo apt install xorg openbox -y
     sudo systemctl daemon-reload
-    sudo systemctl enable iotscanner.service
+    sudo systemctl enable ziotscanner.service
 else
     echo "You, ve choose to not use a service for the app"
 fi
@@ -118,23 +144,24 @@ else
 fi
 
 cp $wallpaper /home/$USER/Documents/$wallpaper
-sudo xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor1/workspace0/last-image -s $wallpaper
-rm $wallpaper
+cd /home/$USER/Documents/
+sudo ln -sf /home/$USER/Documents/$wallpaper /etc/alternatives/desktop-background
+cd /home/$USER/Desktop/
 
 #modifications on project
-sudo mkdir IOTScanner/logs
-sudo touch IOTScanner/logs/logs.log
+mkdir IOTScanner/logs
+touch IOTScanner/logs/logs.log
 sudo chown -R $USER:$USER IOTScanner/logs
 
 cd IOTScanner
-sed -i "52s/.*/        COM_BLESniffer = $ble_antenna/" main.py
-sed -i "53s/.*/        COM_ZigBeeSniffer = $zigbee_antenna/" main.py
-sed -i "54s/.*/        COM_WiFiSniffer = $wifi_antenna/" main.py
-cd ../
+sudo chmod +x main.py
+sudo chmod +x init_antennas.sh
+cd
 
 #allow the user to restart and shtdown without asking password
 sudo echo "$USER ALL=NOPASSWD: /sbin/reboot, /sbin/poweroff" | sudo tee -a /etc/sudoers
 
-echo "By purpuse of security, this script'll delete itself"
+echo -e "\n${GREEN}By purpuse of security, this script'll delete itself"
+echo -e "Installation is now complete and device'll restart ${ENDCOLOR}"
 sudo shutdown -r +1
 rm $0

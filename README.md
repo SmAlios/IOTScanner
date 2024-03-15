@@ -90,7 +90,7 @@ If you want to use the project on Windows, you don't need to do nothing. But ple
 - connect an Ethernet cable and a power cable to the Raspberry (it should start it)
 - connect an USB hub with a mouse and a keyboard to control the Raspberry (or use SSH)
 - launch the terminal
-- type thoses commandes
+- copy and paste this line and enter
 ```bash
 sudo apt install git wget -y; curl https://raw.githubusercontent.com/SmAlios/IOTScanner/main/os_modifications.sh --output 'os_modifications.sh'; sudo chmod +x os_modifications.sh; ./os_modifications.sh
 ```

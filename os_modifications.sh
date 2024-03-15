@@ -3,7 +3,7 @@
 #only run on linux like os
 #this file is originaly made for a raspberrypiOS with GUI equiped with a Touch Display
 #if you use another os or device, you must make some modifications of the file
-
+#
 #read this if you want to use the software on a raspberry pi
 # 1. Download and install the OS with the raspberry software https://www.raspberrypi.com/software/
 # 2. You must install the recommanded os for your raspberry pi on an SD card.

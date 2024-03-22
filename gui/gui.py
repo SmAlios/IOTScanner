@@ -1,5 +1,5 @@
 import tkinter as tk
-import os
+import os, subprocess
 from devices.csv import CSV
 from devices.device import Device
 from devices.network import Network
@@ -39,6 +39,8 @@ class GUI:
         self.scan_progressbar = Myprogressbar()
         self.scv_dir = "csv_dir"
         self.csv_file = CSV("csv_dir")
+
+        self.allowed_file_sys_for_usb_key = ["exfat", "fat32", "ntfs", "ext", "ext4"]
 
         self.scan_started = False
 
@@ -125,7 +127,7 @@ class GUI:
             borderwidth=5,
             relief=tk.RAISED,
             padx=50,
-            pady=60,
+            pady=40,
             background="white",
         )
         self.home_frame.grid(row=0, column=0, sticky="nsew")
@@ -135,17 +137,47 @@ class GUI:
         self.master.grid_rowconfigure(0, weight=1)
 
         if self.scan_started == False:
-            txt = "start scan"
+            btn_txt = "start scan"
+            lb_txt = ""
             cmd = self.start_scan
         elif self.scan_started == True:
-            txt = "stop scan"
+            btn_txt = "stop scan"
+            lb_txt = ""
             cmd = self.stop_scan
-        else:
-            txt = "[scan done]"
+        elif self.scan_started == "scanned":
+            btn_txt = "transfert archive"
+            lb_txt = "insert your usb drive; It must be wiped in exFat"
+            cmd = self.transfert_archive
+        elif self.scan_started == "win":
+            btn_txt = "[done]"
+            lb_txt = ""
+            cmd = ""
+        elif self.scan_started == "done":
+            btn_txt = "[transfert done]"
+            lb_txt = "you can withdraw the usb stick"
+            cmd = ""
+        elif self.scan_started == "win":
+            btn_txt = "[done]"
+            lb_txt = ""
+            cmd = ""
+        elif self.scan_started == "E-CI":
+            btn_txt = "transfert archive"
+            lb_txt = "[Error - command injection in usb name detected]"
+            cmd = ""
+        elif self.scan_started == "E-NC":
+            btn_txt = "transfert archive"
+            lb_txt = "[ERROR - not compatible file system, please prefer exfat]"
+            cmd = ""
 
+        self.label_start_scan = tk.Label(
+            self.home_frame,
+            text=lb_txt
+        )
+        self.label_start_scan.grid(columnspan=2, row=0, column=0, sticky="n")
+        
         self.button_start_scan = tk.Button(
             self.home_frame,
-            text=txt,
+            text=btn_txt,
             font=("Arial", 14),
             command=cmd,
             borderwidth=5,
@@ -154,14 +186,14 @@ class GUI:
             pady=10,
             width=50,
         )
-        self.button_start_scan.grid(columnspan=2, row=0, column=0, sticky="n")
+        self.button_start_scan.grid(columnspan=2, row=1, column=0, sticky="n")
         
         self.home_frame_frequences_btn()
 
         if platform.system() != "Windows":
-            self.home_control_btn()
+            self.home_control_btn(row=4)
 
-        self.scan_progressbar.draw_progressbar(self.home_frame, columnspan=2, column=0, row=4)
+        self.scan_progressbar.draw_progressbar(self.home_frame, columnspan=2, column=0, row=5)
 
         self.home_frame.grid_columnconfigure(0, weight=1)
         self.home_frame.grid_columnconfigure(1, weight=1)
@@ -169,9 +201,10 @@ class GUI:
         self.home_frame.grid_rowconfigure(1, weight=1)
         self.home_frame.grid_rowconfigure(2, weight=1)
         self.home_frame.grid_rowconfigure(3, weight=1)
+        self.home_frame.grid_rowconfigure(4, weight=1)
 
         if platform.system() != "Windows":
-            self.home_frame.grid_rowconfigure(4, weight=1)
+            self.home_frame.grid_rowconfigure(5, weight=1)
 
     def home_frame_frequences_btn(self):
         buttons_list = [
@@ -183,7 +216,7 @@ class GUI:
         ]
 
         i = 0
-        y = [0,1]
+        y = [0,2]
         for element in self.pannels:
 
             if element != "Home":
@@ -206,7 +239,7 @@ class GUI:
                 y[0] = 0
                 y[1] += 1
 
-    def home_control_btn(self):
+    def home_control_btn(self, row):
         self.button_shutdown = tk.Button(
                 self.home_frame,
                 text="shutdown",
@@ -218,7 +251,7 @@ class GUI:
                 pady=10,
                 width=15,
             )
-        self.button_shutdown.grid(row=3, column=0, sticky="n")
+        self.button_shutdown.grid(row=row, column=0, sticky="n")
 
         self.button_reboot = tk.Button(
                 self.home_frame,
@@ -231,7 +264,7 @@ class GUI:
                 pady=10,
                 width=15,
             )
-        self.button_reboot.grid(row=3, column=1, sticky="n")
+        self.button_reboot.grid(row=row, column=1, sticky="n")
 
     # ====================
     # Command frame
@@ -849,14 +882,71 @@ class GUI:
         except Exception as e:
             self.logger.error(f"Error while stoping scan of {self.ZigBee_sniffer}: {e}")
 
-        #compress the files to an archive and delete old files
-        compress_data = Compress(self.scv_dir)
-        compress_data.launch()
+        if platform.system() != "Windows":
+            #compress the files to an archive and delete old files
+            compress_data = Compress(self.scv_dir)
+            compress_data.launch()
 
-        self.scan_started = ""
-        self.button_start_scan['text'] = "[scan done]"
-        self.button_start_scan['command'] = ""
+            self.scan_started = "scanned"
+            self.button_start_scan['text'] = "transfert archive"
+            self.label_start_scan['text'] = "insert your usb drive; It must be wiped in exFat"
+            self.button_start_scan['command'] = self.transfert_archive
+        else:
+            self.scan_started = "win"
+            self.button_start_scan['text'] = "[done]"
+            self.button_start_scan['command'] = ""
+
         self.home_frame.update_idletasks()
+
+    def transfert_archive(self):
+        file_sys = self.check_usb_drive()
+
+        if(file_sys == 0):
+            #copy the last archive onto the usb drive detected
+            os.system("tmp=$(lsblk | grep sda1); file=$(ls -l /home/$(whoami)/Desktop/IOTScanner/archives/ | tail -1 | awk '{print $9}'); cp /home/$(whoami)/Desktop/IOTScanner/archives/$file $(echo $tmp | awk '{print $7}')/$file")
+            
+            #eject usb drive
+            os.system("tmp=$(lsblk | grep sda1); sudo umount $(echo $tmp | awk '{print $7}')")
+
+            self.scan_started = "done"
+            self.label_start_scan['text'] = "you can withdraw the usb stick"
+            self.button_start_scan['text'] = "[transfert done]"
+            self.button_start_scan['command'] = ""
+            self.home_frame.update_idletasks()
+
+    def check_usb_drive(self):
+        btn_txt = self.button_start_scan['text']
+
+        self.button_start_scan['text'] = ""
+        self.label_start_scan['text'] = "check for command injection by usb name"
+        self.home_frame.update_idletasks()
+
+        #Security for command forged on usb drive name
+        proc = subprocess.run(["tmp=$(lsblk | grep sda1); echo $tmp | awk '{print $7}'"], shell=True, capture_output=True, text=True)
+        proc = str(proc.stdout).split("\n")[0].split("/")[-1]
+
+        if(";" in proc):
+            self.scan_started = "E-CI"
+            self.button_start_scan['text'] = btn_txt
+            self.label_start_scan['text'] = "[Error - command injection by usb name detected]"
+            self.home_frame.update_idletasks()
+            return 1
+        
+        self.button_start_scan['text'] = ""
+        self.label_start_scan['text'] = "check for usb file"
+        self.home_frame.update_idletasks()
+
+        file_sys = subprocess.run(["tmp=$(lsblk -f | grep sda1); echo $tmp | awk '{print $2}'"], shell=True, capture_output=True, text=True)
+        file_sys = str(file_sys.stdout).split("\n")[0]
+
+        if(file_sys in self.allowed_file_sys_for_usb_key):
+            return 0
+        else:
+            self.scan_started = "E-NC"
+            self.button_start_scan['text'] = btn_txt
+            self.label_start_scan['text'] = "[ERROR - not compatible file system, please prefer exfat]"
+            self.home_frame.update_idletasks()
+            return 1
 
     def button_change_page_home(self):
         self.change_screen(0)

@@ -79,27 +79,13 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
 
     def start(
         self,
-        add_zigbee_device_row,
-        update_zigbee_device_row,
-        remove_zigbee_device_row,
-        add_zigbee_network_row,
-        update_zigbee_network_row,
-        remove_zigbee_network_row,
-        add_sixlowpan_device_row,
-        update_sixlowpan_device_row,
-        remove_sixlowpan_device_row,
+        add_data_row,
+        update_data_row,
+        remove_data_row,
     ):
-        # device row operations
-        self.add_zigbee_device_row = add_zigbee_device_row
-        self.remove_zigbee_device_row = remove_zigbee_device_row
-        self.update_zigbee_device_row = update_zigbee_device_row
-        self.add_sixlowpan_device_row = add_sixlowpan_device_row
-        self.update_sixlowpan_device_row = update_sixlowpan_device_row
-        self.remove_sixlowpan_device_row = remove_sixlowpan_device_row
-        # network row operations
-        self.add_zigbee_network_row = add_zigbee_network_row
-        self.update_zigbee_network_row = update_zigbee_network_row
-        self.remove_zigbee_network_row = remove_zigbee_network_row
+        self.add_data_row = add_data_row,
+        self.update_data_row = update_data_row
+        self.remove_data_row = remove_data_row
 
         self.running = True
         super().start()
@@ -330,25 +316,28 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
         # Update existing device
         if new_device.key in self.devices:
             device = self.devices[new_device.key]
+
+            distance  = self.get_distance(new_device.RSSI)
+
             if device.RSSI != new_device.RSSI:
                 device.RSSI = new_device.RSSI
                 if new_device.type == "ZigBee":
-                    self.update_zigbee_device_row(
-                        new_device.key, "RSSI", new_device.RSSI
+                    self.update_data_row(
+                        new_device.key, "RSSI", str(distance) + " m", "zigbee", "devices"
                     )
                 else:
-                    self.update_sixlowpan_device_row(
-                        new_device.key, "RSSI", new_device.RSSI
+                    self.update_data_row(
+                        new_device.key, "RSSI", new_device.RSSI, "sixlowpan", "devices"
                     )
             if device.name != new_device.name and new_device.name != "":
                 device.name = new_device.name
                 if new_device.type == "ZigBee":
-                    self.update_zigbee_device_row(
-                        new_device.key, "name", new_device.name
+                    self.update_data_row(
+                        new_device.key, "name", new_device.name, "zigbee", "devices"
                     )
                 else:
-                    self.update_sixlowpan_device_row(
-                        new_device.key, "name", new_device.name
+                    self.update_data_row(
+                        new_device.key, "name", new_device.name, "sixlowpan", "devices"
                     )
 
             if (
@@ -357,45 +346,48 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
                 and new_device.extAddress
             ):
                 device.extAddress = new_device.extAddress
-                self.update_zigbee_device_row(
-                    new_device.key, "extAddress", new_device.extAddress
+                self.update_data_row(
+                    new_device.key, "extAddress", new_device.extAddress, "zigbee", "devices"
                 )
             if device.timestamp != new_device.timestamp:
                 device.timestamp = new_device.timestamp
                 if new_device.type == "ZigBee":
-                    self.update_zigbee_device_row(
-                        new_device.key, "timestamp", new_device.timestamp
+                    self.update_data_row(
+                        new_device.key, "timestamp", new_device.timestamp, "zigbee", "devices"
                     )
                 else:
-                    self.update_sixlowpan_device_row(
-                        new_device.key, "timestamp", new_device.timestamp
+                    self.update_data_row(
+                        new_device.key, "timestamp", new_device.timestamp, "zigbee", "devices"
                     )
         # Add new device
         else:
             self.devices[new_device.key] = new_device
             if new_device.type == "ZigBee":
-                self.add_zigbee_device_row(new_device)
+                self.add_data_row(new_device, "zigbee", "devices")
             else:
-                self.add_sixlowpan_device_row(new_device)
+                self.add_data_row(new_device, "sixlowpan", "devices")
 
     def addOrUpdateNetwork(self, new_network):
         key = new_network.key
 
         # Update existing network
         if key in self.networks:
+
+            distance  = self.get_distance(new_network.RSSI)
+            
             network = self.networks[new_network.key]
             key = network.key
             if network.RSSI != new_network.RSSI:
                 network.RSSI = new_network.RSSI
-                self.update_zigbee_network_row(key, "RSSI", new_network.RSSI)
+                self.update_data_row(key, "RSSI", str(distance) + " m", "zigbee", "network") #new_network.RSSI)
             if network.timestamp != new_network.timestamp:
                 network.timestamp = new_network.timestamp
-                self.update_zigbee_network_row(key, "timestamp", new_network.timestamp)
+                self.update_data_row(key, "timestamp", new_network.timestamp, "zigbee", "network")
 
         # Add new network
         else:
             self.networks[key] = new_network
-            self.add_zigbee_network_row(new_network)
+            self.add_data_row(new_network, "zigbee", "network")
 
     def setChannel(self, channel):
         if not self.oldChannels:
@@ -411,3 +403,7 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
 
     def get_progressbar_value(self):
         return self.progressbar_value
+    
+    # Calcul the distance in meters based on the RSSI
+    def get_distance(self, RSSI):
+        return round(10**((-69 - int(RSSI))/(10*2)), 2)

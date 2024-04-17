@@ -1,17 +1,18 @@
 #!/bin/bash
 
-#only run on linux like os
-#this file is originaly made for a raspberrypiOS with GUI equiped with a Touch Display
-#if you use another os or device, you must make some modifications of the file
+# Only run on linux like OS
+# This file is made for a raspberrypiOS with GUI equiped with a Touch Display
+# If you use another OS or device, you may make some modifications of the file
 #
-#read this if you want to use the software on a raspberry pi
-# 1. Download and install the OS with the raspberry software https://www.raspberrypi.com/software/
-# 2. You must install the recommanded os for your raspberry pi on an SD card.
-#    It's recommanded to use at minimum a 16GB SD card with a minimum speed of 80MB/s in read and/or write
-# 3. Download this file (ex : with git) or copy it (ex : via SSH) to you raspberry
-# 4. Give the correct execution rights to the file (sudo chmod u+x <filename>)
-# 5. Execute the file (./<filename>) and respond to questions
+# How to install RaspberrypiOS and use the script :
+#  1. Download and install the OS with the raspberry software https://www.raspberrypi.com/software/
+#  2. You must install the recommanded OS for your raspberry pi on an SD card.
+#     It's recommanded to use at minimum a 16GB SD card with a minimum speed of 80MB/s in read and/or write
+#  3. Download this file (ex : with git) or copy it (ex : via SSH) to your raspberry
+#  4. Give the correct execution rights to the file (sudo chmod u+x <filename>)
+#  5. Execute the file (./<filename>) and respond to questions
 
+#init setup variables
 RED="\e[31m"
 GREEN="\e[32m"
 ENDCOLOR="\e[0m"
@@ -21,10 +22,11 @@ ble_antenna=""
 wifi_antenna=""
 zigbee_antenna=""
 
-#init setup variables
 touch_display=""
 build_service=""
 want_wallpaper=""
+
+#========================= questions to respons =========================
 
 echo "You will have to respond to three questions"
 
@@ -48,7 +50,7 @@ do
         echo "Character not recognized, try again"
     fi
     flag=1
-    echo "Do you want to create a service who'll launch the app at each OS start (Y/N)"
+    echo "Do you want to create a service who'll launch the app at each OS start (Y/N) (recommanded)"
     read build_service
 done
 
@@ -63,6 +65,8 @@ do
     echo "Do you want a beautiful wallpaper on your desktop (Y/N)"
     read want_wallpaper
 done
+
+#========================= Os configuration =========================
 
 cd Desktop
 sudo apt install xrdp xorg sudo usbutils git curl -y
@@ -85,7 +89,6 @@ echo -e "\n${GREEN}Please connect the antennas on the USB slots, no matter the o
 read -r -p "When it's done, press any key to continue..." key
 
 #config for the touch display
-
 #You can see this video who explain how to connect the screen https://youtu.be/MQF3eQTiIpI
 if [[ $touch_display -eq "Y" ]]
 then
@@ -148,7 +151,8 @@ cp $wallpaper /home/$USER/Documents/$wallpaper
 cd /home/$USER/Documents/
 sudo ln -sf /home/$USER/Documents/$wallpaper /etc/alternatives/desktop-background
 
-#project modifications
+#========================= Project modifications =========================
+
 cd /home/$USER/Desktop/IOTScanner/
 touch logs/logs.log
 sudo chown -R $USER:$USER logs

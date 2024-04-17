@@ -58,10 +58,10 @@ class BLESniffer(Sniffer.Sniffer, threading.Thread):
         self.packetReader.sendScan(findScanRsp, findAux, scanCoded)
         self.packetReader.sendTK([0])
 
-    def start(self, add_ble_device_row, update_ble_device_row, remove_ble_device_row):
-        self.add_ble_device_row = add_ble_device_row
-        self.update_ble_device_row = update_ble_device_row
-        self.remove_ble_device_row = remove_ble_device_row
+    def start(self, add_data_row, update_data_row, remove_data_row):
+        self.add_data_row = add_data_row
+        self.update_data_row = update_data_row
+        self.remove_data_row = remove_data_row
         self.running = True
         super().start()
 
@@ -120,18 +120,20 @@ class BLESniffer(Sniffer.Sniffer, threading.Thread):
                                 )
                                 key = new_device.key
 
+                                distance  = self.get_distance(new_device.RSSI)
+
                                 # Update existing device
                                 if key in self.devices:
                                     device = self.devices[key]
                                     if device.channel != new_device.channel:
                                         device.channel = new_device.channel
-                                        self.update_ble_device_row(
-                                            key, "channel", int(new_device.channel)
+                                        self.update_data_row(
+                                            key, "channel", int(new_device.channel), "ble", "devices"
                                         )
                                     if device.RSSI != new_device.RSSI:
                                         device.RSSI = new_device.RSSI
-                                        self.update_ble_device_row(
-                                            key, "RSSI", int(new_device.RSSI)
+                                        self.update_data_row(
+                                            key, "RSSI", str(distance) + " m", "ble", "devices"
                                         )
                                     if (
                                         device.name != new_device.name
@@ -139,22 +141,27 @@ class BLESniffer(Sniffer.Sniffer, threading.Thread):
                                         and len(new_device.name) < 20
                                     ):
                                         device.name = new_device.name
-                                        self.update_ble_device_row(
-                                            key, "name", new_device.name
+                                        self.update_data_row(
+                                            key, "name", new_device.name, "ble", "devices"
                                         )
                                     if device.timestamp != new_device.timestamp:
                                         device.timestamp = new_device.timestamp
-                                        self.update_ble_device_row(
-                                            key, "timestamp", new_device.timestamp
+                                        self.update_data_row(
+                                            key, "timestamp", new_device.timestamp, "ble", "devices"
                                         )
 
                                 # Add new device
                                 else:
                                     self.devices[key] = new_device
-                                    self.add_ble_device_row(new_device)
+                                    #self.add_ble_device_row(new_device)
+                                    self.add_data_row(new_device, "ble", "devices")
 
                     except Exception as e:
                         logging.exception("packet processing error %s" % str(e))
 
     def get_devices(self):
         return self.devices
+    
+    # Calcul the distance in meters based on the RSSI
+    def get_distance(self, RSSI):
+        return round(10**((-69 - int(RSSI))/(10*2)), 2)

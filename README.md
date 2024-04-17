@@ -4,7 +4,7 @@ This project is an upgrade and port of igorferro1/IoT-Hound's project on Raspber
 prefer to use the "portable version" of the project. Otherwise, you'll need to perform the software directly on a computer.
 
 ## Version
-Last stable version is 1.0.0
+Last stable version is 1.0.8
 
 ## Features
 - detecting BLE devices

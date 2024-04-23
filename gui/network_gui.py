@@ -107,11 +107,14 @@ class NetworkRow:
 
     def on_checkbox_click(self, button, variable):
 
-        if self.check_button == button:
+        if self.check_button == button:                                                         # self.check_button is the object label
             # if not already checked
             if(variable.get()):
-                self.device_table.filter(self.network.channel)
-                self.check_button.select()
+
+                #print(str(self.network.channel).encode('utf-8'))
+
+                self.device_table.filter(self.network.channel)                                  # device.table is a list of all devices
+                self.check_button.select()                                                      # put the button in on state
                 self.set_color("red")
                 if (self.network.type == "WiFi-2.4GHz"):
                     self.Sniffer.serial.write(str(self.network.channel).encode('utf-8'))

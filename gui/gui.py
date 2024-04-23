@@ -143,20 +143,43 @@ class Myprogressbar(threading.Thread):
 
 
 class GUI:
-    def __init__(self, master, BLE_sniffer, WiFi_sniffer, ZigBee_sniffer, current_pannel = 0):
+    def __init__(self, master, dic_used_antennas, current_pannel = 0):
         self.logger = logger  # configure logger
         self.master = master
-        self.BLE_sniffer = BLE_sniffer
-        self.WiFi_sniffer = WiFi_sniffer
-        self.ZigBee_sniffer = ZigBee_sniffer
+
+        # List of possibles pannels, used protocols are add to the list after
+        self.pannels = ["Home"]
+
+        # List of possible sniffers, used by start and stop func
+        self.sniffers = []
+
+        # All protocol known by the software
+        # You must add a "elif" for a new protocol. It need a slef.XXXXX_Sniffer and a
+        # self.pannels.append("<protocol name>") to work
+        for key, antenna in dic_used_antennas.items():
+            if key == "BLE":
+                self.BLE_sniffer = antenna
+                self.pannels.append("BLE")
+                self.sniffers.append(self.BLE_sniffer)
+            elif key == "WiFi":
+                self.WiFi_sniffer = antenna
+                self.pannels.append("WiFi")
+                self.sniffers.append(self.WiFi_sniffer)
+            elif key == "Zigbee":
+                self.ZigBee_sniffer = antenna
+                self.pannels.append("Zigbee")
+                self.pannels.append("6loWPAN")
+                self.sniffers.append(self.ZigBee_sniffer)
+
+                self.scan_progressbar = Myprogressbar(self)
+
         self.seized_devices = set()
 
         # Zigbee scan start at channel 11 and stop at channel 27
         self.zigbee_scan_start = 11
         self.zigbee_scan_progress = 0
         self.zigbee_scan_end = 27
-
-        self.scan_progressbar = Myprogressbar(self)
+        
         self.scv_dir = "csv_dir"
         self.csv_file = CSV("csv_dir")
 
@@ -168,8 +191,7 @@ class GUI:
         # Delete old csv files if not done the last time
         Compress(self.scv_dir).delete_old_files()
 
-        # List of possibles pannels and page is curently displayed / must be displayed
-        self.pannels = ["Home","WiFi","BLE","Zigbee","6loWPAN"]
+        # Page is curently displayed / must be displayed
         self.current_pannel = self.pannels[current_pannel]
         self.call_frequence_widget(self.current_pannel)
 
@@ -186,8 +208,8 @@ class GUI:
             title = "BLE Devices"
         elif protocol == "Zigbee":
             title = "ZigBee Devices"
-        elif protocol == "SixloWPAN":
-            title = "SixloWPAN Devices"
+        elif protocol == "6loWPAN":
+            title = "6loWPAN Devices"
         elif protocol == "Home":
             self.create_home_frame()
 
@@ -235,7 +257,7 @@ class GUI:
             self.create_ble_sniffer_frame()
         elif title == "ZigBee Devices":
             self.create_zigbee_sniffer_frame()
-        elif title == "6LoWPAN Devices":
+        elif title == "6loWPAN Devices":
             self.create_sixlowpan_sniffer_frame()
 
         # Adjust row height and column width
@@ -329,8 +351,9 @@ class GUI:
         if platform.system() != "Windows":
             self.home_control_btn(row=4)
 
-        # Display the progressbar
-        self.scan_progressbar.draw_progressbar(self.home_frame, columnspan=2, column=0, row=5)
+        # Display the progressbar if Zigbee is active
+        if("scan_progressbar" in dir(self)):
+            self.scan_progressbar.draw_progressbar(self.home_frame, columnspan=2, column=0, row=5)
 
         # Set the grid for the called elements
         self.home_frame.grid_columnconfigure(0, weight=1)
@@ -801,40 +824,27 @@ class GUI:
     # function (if the right antennas are connected)
     def start_scan(self):
         self.logger.debug("Start clicked")
-        try:
-            self.BLE_sniffer.start(
-                self.add_data_row, 
-                self.update_data_row,
-                self.remove_data_row,
+
+        for sniffer in self.sniffers:
+            try:
+                sniffer.start(
+                    self.add_data_row, 
+                    self.update_data_row,
+                    self.remove_data_row,
+                )
+            except Exception as e:
+                # Display the protocol name and it error
+                protocol_name = str(sniffer).split("(")[-1].split(",")[0]
+                self.logger.error(f"Error while starting scan of {protocol_name}: {e}")
+
+        # Start a thread for the progress bar. The progress is calculate on Zigbee scan
+        # and so is not loaded if zigbee sniffer is not used
+        if("scan_progressbar" in dir(self)):
+            self.scan_progressbar.start(
+                self.ZigBee_sniffer,
+                self.zigbee_scan_start,
+                self.zigbee_scan_end
             )
-        except Exception as e:
-            self.logger.error(f"Error while starting scan of BLESniffer: {e}")
-
-        try:
-            self.WiFi_sniffer.start(
-                self.add_data_row,
-                self.update_data_row,
-                self.remove_data_row,
-            )
-
-        except Exception as e:
-            self.logger.error(f"Error while starting scan of WiFiSniffer: {e}")
-
-        try:
-            self.ZigBee_sniffer.start(
-                self.add_data_row,
-                self.update_data_row,
-                self.remove_data_row,
-            )
-        except Exception as e:
-            self.logger.error(f"Error while starting scan of ZigBeeSniffer: {e}")
-
-        #start a thread for the progress bar. The progress is calculate on Zigbee scan
-        self.scan_progressbar.start(
-            self.ZigBee_sniffer,
-            self.zigbee_scan_start,
-            self.zigbee_scan_end
-        )
 
         self.scan_started = True
 
@@ -846,21 +856,19 @@ class GUI:
     # Logically, it could stop it
     def stop_scan(self):
         self.logger.debug("Stop clicked")
-        # stop reader threads when button clicked
-        try:
-            self.BLE_sniffer.stop()
-        except Exception as e:
-            self.logger.error(f"Error while stoping scan of {self.BLE_sniffer}: {e}")
-        try:
-            self.WiFi_sniffer.stop()
-        except Exception as e:
-            self.logger.error(f"Error while stoping scan of {self.WiFi_sniffer}: {e}")
-        try:
-            self.ZigBee_sniffer.stop()
-        except Exception as e:
-            self.logger.error(f"Error while stoping scan of {self.ZigBee_sniffer}: {e}")
 
-        self.scan_progressbar.stop()
+        for sniffer in self.sniffers:
+            # stop reader threads when button clicked
+            try:
+                sniffer.stop()
+            except Exception as e:
+                protocol_name = str(sniffer).split("(")[-1].split(",")[0]
+                self.logger.error(f"Error while stoping scan of {protocol_name}: {e}")
+
+        # Stop the progressbar if it exist
+        if("scan_progressbar" in dir(self)):
+            self.scan_progressbar.stop()
+        
         self.scan_stop_signal = True
 
         # If the system used is Linux, compress the logs and propose to send it on an USB stick

@@ -20,6 +20,14 @@ COM_BLESniffer = ""
 COM_ZigBeeSniffer = ""
 COM_WiFiSniffer = ""
 
+# <protocol>:<part of antenna name> can be change and is used to set a tty to a protocol
+# In the protocol section, type the protocol name. In the second, type the/a part of the antenna name
+antennas_dic = {
+    "BLE":"Bluetooth_LE",
+    "Zigbee":"nRF52_USB",
+    "WiFi":"USB_to_UART"
+}
+
 #===================================================================#
 #                                                                   #
 #   Function used to initialize antennas if on Linux.               #
@@ -56,53 +64,35 @@ def init_antennas():
     #           the right antenna's output is link with the right tty.          #
     #                                                                           #
     #===========================================================================#
+    
+    tty = []
+    antenna_name = []
+    conn_antennas_dic = {}
 
-    i = 0
-    usb_tty_list = []
-    acm_tty_list = []
-
-    # Create two lists of possible antenna's tty
     for antenna in antennas_list:
-        if("USB" in antenna):
-            usb_tty_list.append(antenna)
-        if("ACM" in antenna):
-            acm_tty_list.append(antenna)
 
-    # Link BLE and ZigBee antenna's outputs with the right from the list created above
-    for antenna in acm_tty_list:
-        if("Bluetooth_LE" in antenna):
-            COM_BLESniffer = antenna.split(" - ")[0]
-        elif("Nordic_Semiconductor" in antenna):
-            COM_ZigBeeSniffer = antenna.split(" - ")[0]
-        else:
-            i += 1
-            print("ERROR => No right ttyACM* antenna detected, can't run")
+        # Only get attended format of data
+        try:
+            a, b = antenna.split("-")
+            a = a.split(" ")[0]
+        except:
+            pass
 
-    # Link WiFi antenna's output with tty from the list created above.
-    # Because of the used tty syntax for the Wifi antenna, only one tty is expected.
-    # If an error occure, the  default tty is given.
-    list_lenght = len(usb_tty_list)
-    if(list_lenght == 1):
-        COM_WiFiSniffer = usb_tty_list[0]
-    elif(list_lenght > 1):
-        for antenna in usb_tty_list:
-            if("Silicon_Labs" in antenna):
-                COM_WiFiSniffer = antenna.split(" - ")[0]
-    else:
+        # Create a list of tty and a antenna_name list 
+        tty.append(a)
+        antenna_name.append(b)
+
+    # Create a [antenna_name: tty] disctionnary containing the currently connected antennas
+    i = 0
+    for name in antenna_name:
+        for  key, element in antennas_dic.items():
+            if element in name:
+                conn_antennas_dic[key] = tty[i]
+
         i += 1
-        COM_WiFiSniffer = "/dev/ttyUSB0"
-        print("ERROR => No right ttyUSB* antenna detected, default data given")
 
-    # If two antennas or more aren't recognized, the default conf is used
-    if(i >= 2):
-        COM_BLESniffer = "/dev/ttyACM1"
-        COM_ZigBeeSniffer = "/dev/ttyACM0"
-        COM_WiFiSniffer = "/dev/ttyUSB0"
-
-        print("ERROR => too many antennas error, default antenna's terminals given")
-
-    return [COM_BLESniffer, COM_ZigBeeSniffer, COM_WiFiSniffer]
-
+    # Return the dictionnary containing the connected and recognized antennas
+    return conn_antennas_dic
 
 #===============================#
 #                               #
@@ -153,22 +143,43 @@ def main():
     # Detect the os used by the host machine
     os_used = platform.system()
 
+    # Get the list of used antennas
+    dic_used_antennas = {}
+
     # If the os used is Linux, init_antennas() will detect automatically which
     # antenna's output to link with the right tty. If the os used is Windows,
     # it's your job to find the good OM to use (dont use Windows, Linux is better). 
     if os_used == "Linux":
-        COM_BLESniffer, COM_ZigBeeSniffer, COM_WiFiSniffer = init_antennas()
-    elif os_used == "Windows":
-        COM_BLESniffer = "COM6"
-        COM_ZigBeeSniffer = "COM5"
-        COM_WiFiSniffer = "COM8"
-    else:
-        print("Error occure, os unrecognized")
 
-    # Initialize the communication between antenna's firwares and the software
-    MyBLESniffer = BLESniffer(serialport=COM_BLESniffer, baudrate=1000000)
-    MyWiFiSniffer = WiFiSniffer(serialport=COM_WiFiSniffer, baudrate=115200)
-    MyZigBeeSniffer = ZigBeeSniffer(serialport=COM_ZigBeeSniffer, baudrate=115200)
+        d = init_antennas()
+        for protocol, tty in d.items():
+            
+            if protocol == "BLE":
+                MyBLESniffer = BLESniffer(serialport=tty, baudrate=1000000)
+                dic_used_antennas['BLE'] = (MyBLESniffer)
+            elif protocol == "WiFi":
+                MyWiFiSniffer = WiFiSniffer(serialport=tty, baudrate=115200)
+                dic_used_antennas['WiFi'] = (MyWiFiSniffer)
+            elif protocol == "Zigbee":
+                MyZigBeeSniffer = ZigBeeSniffer(serialport=tty, baudrate=115200)
+                dic_used_antennas['Zigbee'] = (MyZigBeeSniffer)
+            else:
+                print("ERROR : a critical error occure")
+                exit()
+
+    elif os_used == "Windows":
+        MyBLESniffer = BLESniffer(serialport="COM6", baudrate=1000000)
+        MyWiFiSniffer = WiFiSniffer(serialport="COM8", baudrate=115200)
+        MyZigBeeSniffer = ZigBeeSniffer(serialport="COM5", baudrate=115200)
+
+        dic_used_antennas = {
+            "BLE": MyBLESniffer, 
+            "WiFi": MyWiFiSniffer, 
+            "Zigbee": MyZigBeeSniffer
+        }
+    else:
+        print("Error occure, OS unrecognized")
+
 
     # Will detect if the software's window is close
     signal.signal(signal.SIGINT, signal_handler)
@@ -177,7 +188,8 @@ def main():
     # a delay is the only solution found to launch the softwre on start. 8 seconds
     # is alittle more tah the time generaly needed by the screen the finish it start
     if delay_on_start == True:
-        sleep(8)
+        #sleep(8)
+        sleep(0)
 
     # Create the main window
     root = tk.Tk()
@@ -196,7 +208,7 @@ def main():
     root.protocol("WM_DELETE_WINDOW", on_closing)
 
     # Create GUI instance
-    gui = GUI(root, MyBLESniffer, MyWiFiSniffer, MyZigBeeSniffer)
+    gui = GUI(root, dic_used_antennas)
 
     root.mainloop()
 

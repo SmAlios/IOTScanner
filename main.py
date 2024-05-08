@@ -12,10 +12,12 @@ from time import sleep
 # Apply a delay on start (required if want to run on OS start)
 delay_on_start = True
 
+# Init sniffer var
 MyBLESniffer = None
 MyWiFiSniffer = None
 MyZigBeeSniffer = None
 
+# init sniffer's COM var
 COM_BLESniffer = ""
 COM_ZigBeeSniffer = ""
 COM_WiFiSniffer = ""
@@ -75,12 +77,14 @@ def init_antennas():
         try:
             a, b = antenna.split("-")
             a = a.split(" ")[0]
+
+            print(antenna)
+
+            # Create a list of tty and a antenna_name list 
+            tty.append(a)
+            antenna_name.append(b)
         except:
             pass
-
-        # Create a list of tty and a antenna_name list 
-        tty.append(a)
-        antenna_name.append(b)
 
     # Create a [antenna_name: tty] disctionnary containing the currently connected antennas
     i = 0

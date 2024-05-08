@@ -14,6 +14,9 @@ class WiFiSniffer(Sniffer.Sniffer, threading.Thread):
         self.networks = {}
         self.logger = logger
 
+        # Must the distance be converted to meters or display the RSSI ? (True for meters)
+        self.convert = True
+
     def start(self, add_data_row, update_data_row, remove_data_row):
         self.add_data_row = add_data_row
         self.update_data_row = update_data_row
@@ -77,14 +80,14 @@ class WiFiSniffer(Sniffer.Sniffer, threading.Thread):
             )
             key = new_network.key
 
-            distance  = self.get_distance(new_network.RSSI)
+            distance  = self.get_distance(new_network.RSSI, self.convert)
 
             # Update existing network
             if(key in self.networks):
                 network = self.networks[key]
                 if(network.RSSI != new_network.RSSI):
                     network.RSSI = new_network.RSSI
-                    self.update_data_row(key, "RSSI", str(distance) + " m", "wifi", "network")
+                    self.update_data_row(key, "RSSI", distance, "wifi", "network")
                     
                 if(network.BSSID != new_network.BSSID):
                     network.BSSID = new_network.BSSID
@@ -122,14 +125,14 @@ class WiFiSniffer(Sniffer.Sniffer, threading.Thread):
         )
         key = new_device.key
  
-        distance  = self.get_distance(new_device.RSSI)
+        distance  = self.get_distance(new_device.RSSI, self.convert)
 
         # Update existing device
         if(key in self.devices):
             device = self.devices[key]
             if(device.RSSI != new_device.RSSI):
                 device.RSSI = new_device.RSSI
-                self.update_data_row(key, "RSSI", str(distance) + " m", "wifi", "devices")
+                self.update_data_row(key, "RSSI", distance, "wifi", "devices")
             if(device.channel != new_device.channel):
                 device.channel = new_device.channel
                 self.update_data_row(key, "channel", int(channel), "wifi", "devices")
@@ -144,7 +147,15 @@ class WiFiSniffer(Sniffer.Sniffer, threading.Thread):
     
     def set_wifi_device_table(self, wifi_device_table):
         self.wifi_device_table = wifi_device_table
-
+ 
     # Calcul the distance in meters based on the RSSI
-    def get_distance(self, RSSI):
-        return round(10**((-69 - int(RSSI))/(10*2)), 2)
+    def get_distance(self, RSSI, convert):
+        mesured_power = -69 # mesure at 1m of a Nokia Kontact
+        N = 2 # constante
+
+        if convert:
+            distance = str(round(10**((mesured_power - int(RSSI))/(10*N)), 2)) + " m"
+        else:
+            distance = int(RSSI)
+
+        return distance

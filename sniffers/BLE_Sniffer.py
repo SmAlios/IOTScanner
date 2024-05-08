@@ -52,6 +52,9 @@ class BLESniffer(Sniffer.Sniffer, threading.Thread):
         self.logger = logger
         self.setup_scan()
 
+        # Must the distance be converted to meters or display the RSSI ? (True for meters)
+        self.convert = True
+
     # Signal the Sniffer to  for advertising devices by sending the REQ_SCAN_CONT UART packet.
     # This will cause it to stop sniffing any device it is sniffing at the moment.
     def setup_scan(self, findScanRsp=False, findAux=False, scanCoded=False):
@@ -120,7 +123,7 @@ class BLESniffer(Sniffer.Sniffer, threading.Thread):
                                 )
                                 key = new_device.key
 
-                                distance  = self.get_distance(new_device.RSSI)
+                                distance  = self.get_distance(new_device.RSSI, self.convert)
 
                                 # Update existing device
                                 if key in self.devices:
@@ -133,7 +136,7 @@ class BLESniffer(Sniffer.Sniffer, threading.Thread):
                                     if device.RSSI != new_device.RSSI:
                                         device.RSSI = new_device.RSSI
                                         self.update_data_row(
-                                            key, "RSSI", str(distance) + " m", "ble", "devices"
+                                            key, "RSSI", distance, "ble", "devices"
                                         )
                                     if (
                                         device.name != new_device.name
@@ -163,5 +166,15 @@ class BLESniffer(Sniffer.Sniffer, threading.Thread):
         return self.devices
     
     # Calcul the distance in meters based on the RSSI
-    def get_distance(self, RSSI):
-        return round(10**((-69 - int(RSSI))/(10*2)), 2)
+    def get_distance(self, RSSI, convert):
+        mesured_power = -69 # mesure at 1m of a Nokia Kontact
+        N = 2 # constante
+
+        # BLE contant variate between 2 and 4. It's better to consider the low strenght
+
+        if convert:
+            distance = str(round(10**((mesured_power - int(RSSI))/(10*N)), 2)) + " m"
+        else:
+            distance = int(RSSI)
+
+        return distance

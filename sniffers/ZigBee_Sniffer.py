@@ -10,6 +10,9 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
     def __init__(self, serialport, baudrate):
         super().__init__(serialport, baudrate, type="ZigBee")
 
+        # Must the distance be converted to meters or display the RSSI ? (True for meters)
+        self.convert = False
+
         self.progressbar_value = 0
         self.oldChannels = []
         self.channels = []
@@ -77,13 +80,8 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
             # "received: 4188EF3DDFFFFF72EC0800FDFF3DB217BE0800130000000018C83DB2216DA902006F0D008E power: -8 lqi: 48 time: 152849947\r\n",
         ]
 
-    def start(
-        self,
-        add_data_row,
-        update_data_row,
-        remove_data_row,
-    ):
-        self.add_data_row = add_data_row,
+    def start(self, add_data_row, update_data_row, remove_data_row):
+        self.add_data_row = add_data_row
         self.update_data_row = update_data_row
         self.remove_data_row = remove_data_row
 
@@ -175,6 +173,9 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
                 # First: Get the Frame Control Field bits that matter (Frame type and source addressing mode)
 
                 # Doing the bytes checks
+
+                #print(f"====> {frameTypeIEEE}, {addressingModeIEEE}, {destAddrModeIEEE}, {intraPAN}")
+
                 if (
                     frameTypeIEEE != "010"
                     and addressingModeIEEE == "10"
@@ -317,13 +318,13 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
         if new_device.key in self.devices:
             device = self.devices[new_device.key]
 
-            distance  = self.get_distance(new_device.RSSI)
+            distance  = self.get_distance(new_device.RSSI, self.convert)
 
             if device.RSSI != new_device.RSSI:
                 device.RSSI = new_device.RSSI
                 if new_device.type == "ZigBee":
                     self.update_data_row(
-                        new_device.key, "RSSI", str(distance) + " m", "zigbee", "devices"
+                        new_device.key, "RSSI", distance, "zigbee", "devices"
                     )
                 else:
                     self.update_data_row(
@@ -357,7 +358,7 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
                     )
                 else:
                     self.update_data_row(
-                        new_device.key, "timestamp", new_device.timestamp, "zigbee", "devices"
+                        new_device.key, "timestamp", new_device.timestamp, "sixlowpan", "devices"
                     )
         # Add new device
         else:
@@ -373,13 +374,13 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
         # Update existing network
         if key in self.networks:
 
-            distance  = self.get_distance(new_network.RSSI)
+            distance  = self.get_distance(new_network.RSSI, self.convert)
             
             network = self.networks[new_network.key]
             key = network.key
             if network.RSSI != new_network.RSSI:
                 network.RSSI = new_network.RSSI
-                self.update_data_row(key, "RSSI", str(distance) + " m", "zigbee", "network") #new_network.RSSI)
+                self.update_data_row(key, "RSSI", distance, "zigbee", "network") #new_network.RSSI)
             if network.timestamp != new_network.timestamp:
                 network.timestamp = new_network.timestamp
                 self.update_data_row(key, "timestamp", new_network.timestamp, "zigbee", "network")
@@ -405,5 +406,13 @@ class ZigBeeSniffer(Sniffer.Sniffer, threading.Thread):
         return self.progressbar_value
     
     # Calcul the distance in meters based on the RSSI
-    def get_distance(self, RSSI):
-        return round(10**((-69 - int(RSSI))/(10*2)), 2)
+    def get_distance(self, RSSI, convert):
+        mesured_power = -69 # mesure at 1m of a Nokia Kontact
+        N = 2 # constante
+
+        if convert:
+            distance = str(round(10**((mesured_power - int(RSSI))/(10*N)), 2)) + " m"
+        else:
+            distance = int(RSSI)
+
+        return distance

@@ -55,6 +55,10 @@ echo "|     IOTscanner linux's installation script starting ...       |"
 echo "================================================================="
 echo -e "\n"
 
+#=========================== delete old files ===========================
+
+rm -r /home/$USER/Desktop/IOTScanner
+
 #========================= questions to respond =========================
 
 echo "You will have to respond to three questions"

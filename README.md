@@ -4,7 +4,7 @@ This project is an upgrade and port of igorferro1/IoT-Hound's project on Raspber
 prefer to use the "portable version" of the project. Otherwise, you'll need to perform the software directly on a computer.
 
 ## Version
-Last stable version is 1.0.8
+Last stable version is 1.0.10
 
 ## Features
 - detecting BLE devices
@@ -22,12 +22,6 @@ During the initial scan, you can move to other tabs but they are not refresh aut
 When the data are display on a table, the signal power is update constantely.
 
 At any time, you can stop the scan. It'll create archive with the collected data in {project directory}/archives.
-
-## road map
-In the next updates could come those features :
-- screen with a radar to display the distance from IOT devices
-- triangulate the IOT devices position with a GPS beacon
-- 3D plan of a case for the Raspberry
 
 ## Needed hardware
 You need some hardware to perform the software.
